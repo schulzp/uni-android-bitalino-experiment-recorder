@@ -15,12 +15,13 @@
             android:layout_weight="1"
             android:layout_height="match_parent"
             android:layout_gravity="left">
-            <TextureView
-                android:id="@+id/previewOutput"
-                android:layout_width="match_parent"
+            <uni.bremen.conditionrecorder.AutoFitTextureView
+                android:id="@+id/textureView"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_above="@+id/btn_takepicture"
-                android:layout_alignParentTop="true"/>
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true" />
         </LinearLayout>
         <LinearLayout
             android:layout_width="0dp"
@@ -28,9 +29,10 @@
             android:layout_height="match_parent"
             android:layout_gravity="right">
             <Button
+                android:id="@+id/recordButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Start Recording" />
+                android:text="@string/record" />
         </LinearLayout>
     </LinearLayout>
 

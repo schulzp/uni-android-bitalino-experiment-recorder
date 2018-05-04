@@ -15,4 +15,8 @@ class ListRecordingsFragment : Fragment() {
                               savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_list_recordings, container, false)
     }
+
+    companion object {
+        fun newInstance():ListRecordingsFragment { return ListRecordingsFragment() }
+    }
 }

@@ -8,10 +8,13 @@ import android.view.Menu
 import android.view.MenuItem
 
 import kotlinx.android.synthetic.main.activity_main.*
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
     enum class Content { LIST, RECORDER }
+
+    private val contentStack:Deque<Content> = ArrayDeque()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -19,10 +22,10 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         fab.setOnClickListener { _ ->
-            showContent(Content.RECORDER)
+            setContent(Content.RECORDER)
         }
 
-        showContent(Content.LIST)
+        setContent(Content.LIST)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -41,23 +44,32 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showContent(content:Content) {
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
-        val fragment: Fragment? = when(content) {
+    private fun setContent(content:Content) {
+        var orientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        val fragment: Fragment = when(content) {
             Content.LIST -> {
-                ListRecordingsFragment()
+                ListRecordingsFragment.newInstance()
             }
             Content.RECORDER -> {
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                RecorderFragment()
+                orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                RecorderFragment.newInstance()
             }
         }
 
-        if (fragment != null) {
-            supportFragmentManager
-                    .beginTransaction()
-                    .replace(R.id.main_fragment, fragment)
-                    .commit()
+        requestedOrientation = orientation
+        supportFragmentManager
+                .beginTransaction()
+                .replace(R.id.main_fragment, fragment)
+                .commit()
+
+        this.contentStack.push(content)
+    }
+
+    override fun onBackPressed() {
+        if (!contentStack.isEmpty()) {
+            setContent(contentStack.pop())
+        } else {
+            super.onBackPressed()
         }
     }
 
