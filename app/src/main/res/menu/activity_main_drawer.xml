@@ -3,8 +3,11 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/climbs"
+            android:id="@+id/contentRecordings"
             android:title="@string/recordings" />
+        <item
+            android:id="@+id/contentDevices"
+            android:title="@string/devices" />
     </group>
 
 </menu>

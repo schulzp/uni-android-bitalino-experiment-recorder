@@ -9,10 +9,13 @@ import android.view.MenuItem
 
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
+import android.support.design.widget.NavigationView
+
+
 
 class MainActivity : AppCompatActivity() {
 
-    enum class Content { LIST, RECORDER }
+    enum class Content { RECORDINGS, RECORDER, DEVICES }
 
     private val contentStack:Deque<Content> = ArrayDeque()
 
@@ -21,17 +24,44 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
+        supportActionBar.also {
+            it?.setHomeButtonEnabled(true)
+            it?.setTitle("Moin!")
+            it?.setSubtitle("Tolle Wurst...")
+        }
+
         fab.setOnClickListener { _ ->
             setContent(Content.RECORDER)
         }
 
-        setContent(Content.LIST)
+        navigationView.setNavigationItemSelectedListener { menuItem ->
+            // set item as selected to persist highlight
+            menuItem.isChecked = true
+            // close drawer when item is tapped
+            drawerLayout.closeDrawers()
+
+            when (menuItem.itemId) {
+                R.id.contentDevices -> setContent(Content.DEVICES)
+                R.id.contentRecordings -> setContent(Content.RECORDINGS)
+            }
+
+            true
+        }
+
+        setContent(Content.RECORDINGS)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        menuInflater.inflate(R.menu.menu_list_recordings, menu)
-        return true
+        var menuId:Int = when (contentStack.peek()) {
+            Content.RECORDINGS -> R.menu.menu_list_recordings
+            else -> -1
+        }
+
+        if (menuId > 0) {
+            menuInflater.inflate(menuId, menu)
+            return true
+        }
+        return false
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -47,12 +77,18 @@ class MainActivity : AppCompatActivity() {
     private fun setContent(content:Content) {
         var orientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
         val fragment: Fragment = when(content) {
-            Content.LIST -> {
+            Content.RECORDINGS -> {
+                fab.show()
                 ListRecordingsFragment.newInstance()
             }
             Content.RECORDER -> {
+                fab.hide()
                 orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 RecorderFragment.newInstance()
+            }
+            Content.DEVICES -> {
+                fab.hide()
+                ListDevicesFragment.newInstance()
             }
         }
 

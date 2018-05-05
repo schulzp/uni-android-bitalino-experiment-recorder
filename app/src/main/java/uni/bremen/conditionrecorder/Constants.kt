@@ -20,5 +20,13 @@ package uni.bremen.conditionrecorder
 
 import android.Manifest
 
-val REQUEST_VIDEO_PERMISSIONS = 1
+const val REQUEST_VIDEO_PERMISSIONS = 1
+const val REQUEST_ENABLE_BT = 2
+const val REQUEST_COARSE_LOCATION_PERMISSIONS = 3
+
+const val SCAN_PERIOD: Long = 10000
+
+const val FRAGMENT_DIALOG = "dialog"
+
 val VIDEO_PERMISSIONS = arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+val COARSE_LOCATION_PERMISSIONS = arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION)

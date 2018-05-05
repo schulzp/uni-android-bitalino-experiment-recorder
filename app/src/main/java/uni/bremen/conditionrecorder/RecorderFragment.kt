@@ -54,7 +54,6 @@ import kotlin.collections.ArrayList
 class RecorderFragment : Fragment(), View.OnClickListener,
         ActivityCompat.OnRequestPermissionsResultCallback {
 
-    private val FRAGMENT_DIALOG = "dialog"
     private val TAG = "RecorderFragment"
     private val SENSOR_ORIENTATION_DEFAULT_DEGREES = 90
     private val SENSOR_ORIENTATION_INVERSE_DEGREES = 270
