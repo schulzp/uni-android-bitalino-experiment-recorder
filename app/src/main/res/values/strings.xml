@@ -8,4 +8,6 @@
     <string name="start_scanning">Scan</string>
     <string name="stop_scanning">Stop</string>
     <string name="devices">Devices</string>
+    <string name="drawer_close">Close Drawer</string>
+    <string name="drawer_open">Open Drawer</string>
 </resources>

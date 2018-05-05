@@ -24,8 +24,6 @@ import java.util.*
 
 class ListDevicesFragment : ListFragment() {
 
-    private val TAG = "ListDevicesFragment"
-
     private lateinit var deviceListAdapter: DeviceListAdapter
     private lateinit var mBluetoothAdapter: BluetoothAdapter
     private var mScanning: Boolean = false
@@ -64,6 +62,20 @@ class ListDevicesFragment : ListFragment() {
         requestLocationPermissions()
 
         bthDeviceScan = BTHDeviceScan(this.context)
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+
+        with(activity as MainActivity) {
+            title = resources.getString(R.string.devices)
+            setDrawerEnabled(false)
+            updateDrawerMenu(R.id.contentDevices)
+
+            with(getFab()) {
+                hide()
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
@@ -276,6 +288,8 @@ class ListDevicesFragment : ListFragment() {
     }
 
     companion object {
+        val TAG = Content.DEVICES.name
+
         fun newInstance():ListDevicesFragment { return ListDevicesFragment() }
     }
 

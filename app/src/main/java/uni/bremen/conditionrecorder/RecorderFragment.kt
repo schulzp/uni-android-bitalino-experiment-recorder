@@ -41,7 +41,6 @@ import android.util.Log
 import android.util.Size
 import android.util.SparseIntArray
 import android.view.*
-import android.widget.Button
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
 import kotlinx.android.synthetic.main.fragment_recorder.*
@@ -53,22 +52,6 @@ import kotlin.collections.ArrayList
 
 class RecorderFragment : Fragment(), View.OnClickListener,
         ActivityCompat.OnRequestPermissionsResultCallback {
-
-    private val TAG = "RecorderFragment"
-    private val SENSOR_ORIENTATION_DEFAULT_DEGREES = 90
-    private val SENSOR_ORIENTATION_INVERSE_DEGREES = 270
-    private val DEFAULT_ORIENTATIONS = SparseIntArray().apply {
-        append(Surface.ROTATION_0, 90)
-        append(Surface.ROTATION_90, 0)
-        append(Surface.ROTATION_180, 270)
-        append(Surface.ROTATION_270, 180)
-    }
-    private val INVERSE_ORIENTATIONS = SparseIntArray().apply {
-        append(Surface.ROTATION_0, 270)
-        append(Surface.ROTATION_90, 180)
-        append(Surface.ROTATION_180, 90)
-        append(Surface.ROTATION_270, 0)
-    }
 
     /**
      * [TextureView.SurfaceTextureListener] handles several lifecycle events on a
@@ -175,10 +158,27 @@ class RecorderFragment : Fragment(), View.OnClickListener,
 
     private var mediaRecorder: MediaRecorder? = null
 
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+
+        with(activity as MainActivity) {
+            title = resources.getString(R.string.recorder)
+            setDrawerEnabled(false)
+            updateDrawerMenu(-1)
+
+            with(getFab()) {
+                hide()
+            }
+        }
+    }
+
     override fun onCreateView(inflater: LayoutInflater,
                               container: ViewGroup?,
                               savedInstanceState: Bundle?
-    ): View? = inflater.inflate(R.layout.fragment_recorder, container, false)
+    ): View? {
+        Log.d(TAG, "on create view")
+        return inflater.inflate(R.layout.fragment_recorder, container, false)
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         recordButton.setOnClickListener(this)
@@ -598,6 +598,23 @@ class RecorderFragment : Fragment(), View.OnClickListener,
     }
 
     companion object {
+        val TAG = Content.RECORDER.name
+
+        const val SENSOR_ORIENTATION_DEFAULT_DEGREES = 90
+        const val SENSOR_ORIENTATION_INVERSE_DEGREES = 270
+        val DEFAULT_ORIENTATIONS = SparseIntArray().apply {
+            append(Surface.ROTATION_0, 90)
+            append(Surface.ROTATION_90, 0)
+            append(Surface.ROTATION_180, 270)
+            append(Surface.ROTATION_270, 180)
+        }
+        val INVERSE_ORIENTATIONS = SparseIntArray().apply {
+            append(Surface.ROTATION_0, 270)
+            append(Surface.ROTATION_90, 180)
+            append(Surface.ROTATION_180, 90)
+            append(Surface.ROTATION_270, 0)
+        }
+
         fun newInstance(): RecorderFragment = RecorderFragment()
     }
 
