@@ -190,10 +190,6 @@ class RecorderVideoFragment : Fragment(),
                               savedInstanceState: Bundle?)
             : View? = inflater.inflate(R.layout.fragment_recorder_video, container, false)
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-    }
-
     override fun onResume() {
         super.onResume()
         startBackgroundThread()
