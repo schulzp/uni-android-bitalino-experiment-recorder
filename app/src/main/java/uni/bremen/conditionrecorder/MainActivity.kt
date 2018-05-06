@@ -114,7 +114,7 @@ class MainActivity : AppCompatActivity() {
                 ListRecordingsFragment.newInstance()
             }
             Content.RECORDER -> {
-                VideoRecorderFragment.newInstance()
+                RecorderFragment.newInstance()
             }
             Content.DEVICES -> {
                 ListDevicesFragment.newInstance()

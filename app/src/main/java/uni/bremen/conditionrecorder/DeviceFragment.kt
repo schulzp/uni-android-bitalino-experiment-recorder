@@ -1,6 +1,5 @@
 package uni.bremen.conditionrecorder
 
-import android.app.Activity
 import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -17,10 +16,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import info.plux.pluxapi.Communication
-import info.plux.pluxapi.bitalino.*
-import info.plux.pluxapi.bitalino.bth.OnBITalinoDataAvailable
 import info.plux.pluxapi.Constants
 import info.plux.pluxapi.Constants.*
+import info.plux.pluxapi.bitalino.*
+import info.plux.pluxapi.bitalino.bth.OnBITalinoDataAvailable
 
 class DeviceFragment : Fragment(), OnBITalinoDataAvailable, View.OnClickListener {
 

@@ -17,7 +17,6 @@
 package uni.bremen.conditionrecorder
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.content.res.Configuration
@@ -43,15 +42,18 @@ import android.util.SparseIntArray
 import android.view.*
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
-import kotlinx.android.synthetic.main.fragment_video_recorder.*
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import kotlinx.android.synthetic.main.fragment_recorder_video.*
 import java.io.IOException
 import java.util.Collections
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 
-class VideoRecorderFragment : Fragment(), View.OnClickListener,
-        ActivityCompat.OnRequestPermissionsResultCallback {
+class RecorderVideoFragment : Fragment(),
+        ActivityCompat.OnRequestPermissionsResultCallback,
+        RecorderBus.Aware {
 
     /**
      * [TextureView.SurfaceTextureListener] handles several lifecycle events on a
@@ -98,6 +100,13 @@ class VideoRecorderFragment : Fragment(), View.OnClickListener,
      * Whether the app is recording video now
      */
     private var isRecordingVideo = false
+        set(value) {
+            recorderBus.post(
+                    if (value)
+                        RecorderBus.VideoRecordingStarted()
+                    else
+                        RecorderBus.VideoRecordingStopped(nextVideoAbsolutePath ?: "unknown"))
+        }
 
     /**
      * An additional thread for running tasks that shouldn't block the UI.
@@ -131,7 +140,7 @@ class VideoRecorderFragment : Fragment(), View.OnClickListener,
 
         override fun onOpened(cameraDevice: CameraDevice) {
             cameraOpenCloseLock.release()
-            this@VideoRecorderFragment.cameraDevice = cameraDevice
+            this@RecorderVideoFragment.cameraDevice = cameraDevice
             startPreview()
             configureTransform(textureView.width, textureView.height)
         }
@@ -139,13 +148,13 @@ class VideoRecorderFragment : Fragment(), View.OnClickListener,
         override fun onDisconnected(cameraDevice: CameraDevice) {
             cameraOpenCloseLock.release()
             cameraDevice.close()
-            this@VideoRecorderFragment.cameraDevice = null
+            this@RecorderVideoFragment.cameraDevice = null
         }
 
         override fun onError(cameraDevice: CameraDevice, error: Int) {
             cameraOpenCloseLock.release()
             cameraDevice.close()
-            this@VideoRecorderFragment.cameraDevice = null
+            this@RecorderVideoFragment.cameraDevice = null
             activity?.finish()
         }
 
@@ -157,6 +166,10 @@ class VideoRecorderFragment : Fragment(), View.OnClickListener,
     private var nextVideoAbsolutePath: String? = null
 
     private var mediaRecorder: MediaRecorder? = null
+
+    private var disposable: Disposable? = null
+
+    override lateinit var recorderBus: RecorderBus
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
@@ -174,14 +187,11 @@ class VideoRecorderFragment : Fragment(), View.OnClickListener,
 
     override fun onCreateView(inflater: LayoutInflater,
                               container: ViewGroup?,
-                              savedInstanceState: Bundle?
-    ): View? {
-        Log.d(TAG, "on create view")
-        return inflater.inflate(R.layout.fragment_video_recorder, container, false)
-    }
+                              savedInstanceState: Bundle?)
+            : View? = inflater.inflate(R.layout.fragment_recorder_video, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        recordButton.setOnClickListener(this)
+        super.onViewCreated(view, savedInstanceState)
     }
 
     override fun onResume() {
@@ -197,26 +207,19 @@ class VideoRecorderFragment : Fragment(), View.OnClickListener,
         } else {
             textureView.surfaceTextureListener = surfaceTextureListener
         }
+
+        disposable = recorderBus.commandSubject.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
+            when (it) {
+                is RecorderBus.StartRecordingVideo -> startRecordingVideo()
+                is RecorderBus.StopRecordingVideo -> stopRecordingVideo()
+            }
+        }
     }
 
     override fun onPause() {
         closeCamera()
         stopBackgroundThread()
         super.onPause()
-    }
-
-    override fun onClick(view: View) {
-        when (view.id) {
-            R.id.recordButton -> if (isRecordingVideo) stopRecordingVideo() else startRecordingVideo()
-            R.id.info -> {
-                if (activity != null) {
-                    AlertDialog.Builder(activity)
-                            .setMessage(R.string.intro_message)
-                            .setPositiveButton(android.R.string.ok, null)
-                            .show()
-                }
-            }
-        }
     }
 
     /**
@@ -517,7 +520,6 @@ class VideoRecorderFragment : Fragment(), View.OnClickListener,
                     captureSession = cameraCaptureSession
                     updatePreview()
                     activity?.runOnUiThread {
-                        recordButton.setText(R.string.stop)
                         isRecordingVideo = true
                         mediaRecorder?.start()
                     }
@@ -542,13 +544,13 @@ class VideoRecorderFragment : Fragment(), View.OnClickListener,
 
     private fun stopRecordingVideo() {
         isRecordingVideo = false
-        recordButton.setText(R.string.record)
+        //recordButton.setText(R.string.record)
         mediaRecorder?.apply {
             stop()
             reset()
         }
 
-        if (activity != null) showToast("Video saved: $nextVideoAbsolutePath")
+        //if (activity != null) showToast("Video saved: $nextVideoAbsolutePath")
         nextVideoAbsolutePath = null
         startPreview()
     }
@@ -615,7 +617,7 @@ class VideoRecorderFragment : Fragment(), View.OnClickListener,
             append(Surface.ROTATION_270, 0)
         }
 
-        fun newInstance(): VideoRecorderFragment = VideoRecorderFragment()
+        fun newInstance(bus: RecorderBus): RecorderVideoFragment = RecorderVideoFragment().also { it.recorderBus = bus }
     }
 
 }

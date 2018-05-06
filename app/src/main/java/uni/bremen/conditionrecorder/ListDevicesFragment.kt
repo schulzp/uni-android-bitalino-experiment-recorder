@@ -12,7 +12,6 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.ListFragment
-import android.util.Log
 import android.view.*
 import android.widget.BaseAdapter
 import android.widget.ListView
@@ -21,8 +20,6 @@ import android.widget.Toast
 import info.plux.pluxapi.BTHDeviceScan
 import info.plux.pluxapi.Constants
 import java.util.*
-
-import info.plux.pluxapi.Constants.*
 
 class ListDevicesFragment : ListFragment() {
 
