@@ -43,14 +43,14 @@ import android.util.SparseIntArray
 import android.view.*
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
-import kotlinx.android.synthetic.main.fragment_recorder.*
+import kotlinx.android.synthetic.main.fragment_video_recorder.*
 import java.io.IOException
 import java.util.Collections
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 
-class RecorderFragment : Fragment(), View.OnClickListener,
+class VideoRecorderFragment : Fragment(), View.OnClickListener,
         ActivityCompat.OnRequestPermissionsResultCallback {
 
     /**
@@ -131,7 +131,7 @@ class RecorderFragment : Fragment(), View.OnClickListener,
 
         override fun onOpened(cameraDevice: CameraDevice) {
             cameraOpenCloseLock.release()
-            this@RecorderFragment.cameraDevice = cameraDevice
+            this@VideoRecorderFragment.cameraDevice = cameraDevice
             startPreview()
             configureTransform(textureView.width, textureView.height)
         }
@@ -139,13 +139,13 @@ class RecorderFragment : Fragment(), View.OnClickListener,
         override fun onDisconnected(cameraDevice: CameraDevice) {
             cameraOpenCloseLock.release()
             cameraDevice.close()
-            this@RecorderFragment.cameraDevice = null
+            this@VideoRecorderFragment.cameraDevice = null
         }
 
         override fun onError(cameraDevice: CameraDevice, error: Int) {
             cameraOpenCloseLock.release()
             cameraDevice.close()
-            this@RecorderFragment.cameraDevice = null
+            this@VideoRecorderFragment.cameraDevice = null
             activity?.finish()
         }
 
@@ -177,7 +177,7 @@ class RecorderFragment : Fragment(), View.OnClickListener,
                               savedInstanceState: Bundle?
     ): View? {
         Log.d(TAG, "on create view")
-        return inflater.inflate(R.layout.fragment_recorder, container, false)
+        return inflater.inflate(R.layout.fragment_video_recorder, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -615,7 +615,7 @@ class RecorderFragment : Fragment(), View.OnClickListener,
             append(Surface.ROTATION_270, 0)
         }
 
-        fun newInstance(): RecorderFragment = RecorderFragment()
+        fun newInstance(): VideoRecorderFragment = VideoRecorderFragment()
     }
 
 }

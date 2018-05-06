@@ -1,7 +1,6 @@
 package uni.bremen.conditionrecorder
 
 import android.bluetooth.BluetoothDevice
-import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
@@ -115,7 +114,7 @@ class MainActivity : AppCompatActivity() {
                 ListRecordingsFragment.newInstance()
             }
             Content.RECORDER -> {
-                RecorderFragment.newInstance()
+                VideoRecorderFragment.newInstance()
             }
             Content.DEVICES -> {
                 ListDevicesFragment.newInstance()
