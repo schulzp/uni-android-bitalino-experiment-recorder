@@ -44,6 +44,20 @@ class RecorderFragment : Fragment() {
                 .commit()
     }
 
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+
+        with(activity as MainActivity) {
+            title = resources.getString(R.string.recorder)
+            setDrawerEnabled(false)
+            updateDrawerMenu(-1)
+
+            with(getFab()) {
+                hide()
+            }
+        }
+    }
+
     private fun showToast(message : String) = Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
 
     companion object {

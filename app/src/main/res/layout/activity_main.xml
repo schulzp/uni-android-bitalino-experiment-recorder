@@ -7,7 +7,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:openDrawer="start">
+    tools:openDrawer="start"
+    tools:context=".MainActivity">
 
     <android.support.design.widget.CoordinatorLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
@@ -15,8 +16,7 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fitsSystemWindows="true"
-        tools:context=".MainActivity">
+        android:fitsSystemWindows="true">
 
         <android.support.design.widget.AppBarLayout
             android:layout_height="wrap_content"
@@ -30,11 +30,17 @@
                 android:theme="@style/AppTheme.ToolBar"
                 app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
                 app:subtitleTextAppearance="@style/AppTheme.ToolBar.Subtitle"
-                app:titleTextAppearance="@style/AppTheme.ToolBar.Title" />
+                app:titleTextAppearance="@style/AppTheme.ToolBar.Title"
+                app:layout_scrollFlags="scroll|enterAlways" />
 
         </android.support.design.widget.AppBarLayout>
 
-        <include layout="@layout/main_content"/>
+        <android.support.v4.widget.NestedScrollView
+            android:id="@+id/main_fragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        </android.support.v4.widget.NestedScrollView>
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab"

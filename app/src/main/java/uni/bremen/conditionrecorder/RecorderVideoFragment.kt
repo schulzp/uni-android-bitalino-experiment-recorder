@@ -171,20 +171,6 @@ class RecorderVideoFragment : Fragment(),
 
     override lateinit var recorderBus: RecorderBus
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-
-        with(activity as MainActivity) {
-            title = resources.getString(R.string.recorder)
-            setDrawerEnabled(false)
-            updateDrawerMenu(-1)
-
-            with(getFab()) {
-                hide()
-            }
-        }
-    }
-
     override fun onCreateView(inflater: LayoutInflater,
                               container: ViewGroup?,
                               savedInstanceState: Bundle?)
@@ -320,6 +306,8 @@ class RecorderVideoFragment : Fragment(),
             previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture::class.java),
                     width, height, videoSize)
 
+            Log.d(TAG, "open camera: $width, $height --> $previewSize ($videoSize)")
+
             if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                 textureView.setAspectRatio(previewSize.width, previewSize.height)
             } else {
@@ -441,6 +429,7 @@ class RecorderVideoFragment : Fragment(),
                 postRotate((90 * (rotation - 2)).toFloat(), centerX, centerY)
             }
         }
+
         textureView.setTransform(matrix)
     }
 
