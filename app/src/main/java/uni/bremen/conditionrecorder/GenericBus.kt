@@ -12,8 +12,8 @@ abstract class GenericBus<T: GenericBus.Instance, ET: T, CT: T> {
 
     abstract val eventSubject: Observable<ET>
 
-    fun post(instance: T) {
-        subject.onNext(instance)
+    fun post(vararg instance: T) {
+        instance.forEach { subject.onNext(it) }
     }
 
     interface Instance

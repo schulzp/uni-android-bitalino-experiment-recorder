@@ -9,13 +9,38 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.fragment_recorder_controls.*
 
-class RecorderControlsFragment : Fragment(), RecorderBus.Aware {
-
-    override lateinit var recorderBus: RecorderBus
-
-    private var disposable:Disposable? = null
+class RecorderControlsFragment : Fragment() {
 
     private var recording = false
+
+    private lateinit var recorderServiceConnection:RecorderService.Connection
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        recorderServiceConnection = RecorderService.bind(activity!!).also { connection ->
+            connection.connected {
+                connection.dispose(it.recording.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
+                    when(it) {
+                        is RecorderBus.RecordingStared -> {
+                            recordButton.text = getString(R.string.stop)
+                            recording = true
+                        }
+                        is RecorderBus.RecordingStopped -> {
+                            recordButton.text = getString(R.string.record)
+                            recording = false
+                        }
+                    }
+                })
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        recorderServiceConnection?.close(activity!!)
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
             : View? = inflater.inflate(R.layout.fragment_recorder_controls, container, false)
@@ -24,39 +49,15 @@ class RecorderControlsFragment : Fragment(), RecorderBus.Aware {
         super.onViewCreated(view, savedInstanceState)
 
         recordButton.setOnClickListener {
-            recorderBus.post(
                     if (recording)
-                        RecorderBus.StopRecordingVideo()
+                        recorderServiceConnection?.service?.recorderBus?.post(RecorderBus.StopRecording(), RecorderBus.SignalRecordingStopped())
                     else
-                        RecorderBus.StartRecordingVideo())
+                        recorderServiceConnection?.service?.recorderBus?.post(RecorderBus.StartRecording(), RecorderBus.SignalRecordingStarted())
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        disposable = recorderBus.eventSubject.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
-            when(it) {
-                is RecorderBus.VideoRecordingStarted -> {
-                    recordButton.text = getString(R.string.stop)
-                    recording = true
-                }
-                is RecorderBus.VideoRecordingStopped -> {
-                    recordButton.text = getString(R.string.record)
-                    recording = false
-                }
-            }
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-
-        disposable?.dispose()
     }
 
     companion object {
-        fun newInstance(bus: RecorderBus):RecorderControlsFragment = RecorderControlsFragment().also { it.recorderBus = bus }
+        fun newInstance():RecorderControlsFragment = RecorderControlsFragment()
     }
 
 }

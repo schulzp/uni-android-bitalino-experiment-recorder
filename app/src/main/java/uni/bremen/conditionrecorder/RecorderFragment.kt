@@ -7,29 +7,27 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
 
 class RecorderFragment : Fragment() {
 
-    private val recorderBus = RecorderBus()
+    private lateinit var recorderServiceConnection:RecorderService.Connection
 
-    private val disposables:MutableMap<String, Disposable> = HashMap()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-    override fun onResume() {
-        super.onResume()
-
-        disposables["video.events"] = recorderBus.eventSubject.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
-            if (it is RecorderBus.VideoRecordingStopped) {
-                showToast(it.path)
+        recorderServiceConnection = RecorderService.bind(activity!!).also { connection ->
+            connection.connected {
+                connection.dispose(it.recordingStopped.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
+                    showToast(it.videoRecordingStopped.path)
+                })
             }
         }
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onDestroy() {
+        super.onDestroy()
 
-        disposables.values.forEach { it.dispose() }
-        disposables.clear()
+        recorderServiceConnection?.close(activity!!)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
@@ -39,8 +37,8 @@ class RecorderFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         childFragmentManager.beginTransaction()
-                .replace(R.id.videoPlaceholder, RecorderVideoFragment.newInstance(recorderBus))
-                .replace(R.id.controlsPlaceholder, RecorderControlsFragment.newInstance(recorderBus))
+                .replace(R.id.videoPlaceholder, RecorderVideoFragment.newInstance())
+                .replace(R.id.controlsPlaceholder, RecorderControlsFragment.newInstance())
                 .commit()
     }
 

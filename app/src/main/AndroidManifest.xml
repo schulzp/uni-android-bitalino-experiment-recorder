@@ -20,6 +20,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".RecorderService"
+            android:enabled="true"
+            android:exported="false" />
     </application>
 
     <uses-feature android:name="android.hardware.camera2.full" />

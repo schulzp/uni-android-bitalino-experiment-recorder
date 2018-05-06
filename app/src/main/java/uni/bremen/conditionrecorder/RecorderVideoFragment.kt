@@ -52,8 +52,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 
 class RecorderVideoFragment : Fragment(),
-        ActivityCompat.OnRequestPermissionsResultCallback,
-        RecorderBus.Aware {
+        ActivityCompat.OnRequestPermissionsResultCallback {
 
     /**
      * [TextureView.SurfaceTextureListener] handles several lifecycle events on a
@@ -101,7 +100,7 @@ class RecorderVideoFragment : Fragment(),
      */
     private var isRecordingVideo = false
         set(value) {
-            recorderBus.post(
+            recorderServiceConnection.service?.recorderBus?.post(
                     if (value)
                         RecorderBus.VideoRecordingStarted()
                     else
@@ -167,9 +166,22 @@ class RecorderVideoFragment : Fragment(),
 
     private var mediaRecorder: MediaRecorder? = null
 
-    private var disposable: Disposable? = null
+    private lateinit var recorderServiceConnection:RecorderService.Connection
 
-    override lateinit var recorderBus: RecorderBus
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        recorderServiceConnection = RecorderService.bind(activity!!).also { connection ->
+            connection.connected {
+                connection.dispose(it.recorderBus.commandSubject.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
+                    when (it) {
+                        is RecorderBus.StartRecording -> startRecordingVideo()
+                        is RecorderBus.StopRecording -> stopRecordingVideo()
+                    }
+                })
+            }
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater,
                               container: ViewGroup?,
@@ -188,13 +200,6 @@ class RecorderVideoFragment : Fragment(),
             openCamera(textureView.width, textureView.height)
         } else {
             textureView.surfaceTextureListener = surfaceTextureListener
-        }
-
-        disposable = recorderBus.commandSubject.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
-            when (it) {
-                is RecorderBus.StartRecordingVideo -> startRecordingVideo()
-                is RecorderBus.StopRecordingVideo -> stopRecordingVideo()
-            }
         }
     }
 
@@ -602,7 +607,7 @@ class RecorderVideoFragment : Fragment(),
             append(Surface.ROTATION_270, 0)
         }
 
-        fun newInstance(bus: RecorderBus): RecorderVideoFragment = RecorderVideoFragment().also { it.recorderBus = bus }
+        fun newInstance(): RecorderVideoFragment = RecorderVideoFragment()
     }
 
 }
