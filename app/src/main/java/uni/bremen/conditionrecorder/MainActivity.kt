@@ -1,5 +1,6 @@
 package uni.bremen.conditionrecorder
 
+import android.bluetooth.BluetoothDevice
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
@@ -9,6 +10,7 @@ import android.support.v4.view.GravityCompat
 import android.support.v4.widget.DrawerLayout
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import kotlinx.android.synthetic.main.activity_main.*
@@ -22,6 +24,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
+
+        Log.d(TAG, "create main activity: ${intent.getSerializableExtra(EXTRA_SHOW_CONTENT)} ${intent.getParcelableExtra<BluetoothDevice>(DeviceFragment.EXTRA_DEVICE)}")
+
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
@@ -42,7 +49,7 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        setContent(Content.RECORDINGS)
+        setContent(intent.getSerializableExtra(EXTRA_SHOW_CONTENT) as? Content ?: Content.RECORDINGS)
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
@@ -101,21 +108,24 @@ class MainActivity : AppCompatActivity() {
     internal fun getFab():FloatingActionButton = fab
 
     internal fun setContent(content:Content) {
-        var tag:String?
-        val fragment: Fragment = when(content) {
+        val tag = content.name
+        val fragment: Fragment = supportFragmentManager.findFragmentByTag(tag)
+                ?: when(content) {
             Content.RECORDINGS -> {
-                tag = ListRecordingsFragment.TAG
-                supportFragmentManager.findFragmentByTag(tag) ?: ListRecordingsFragment.newInstance()
+                ListRecordingsFragment.newInstance()
             }
             Content.RECORDER -> {
-                tag = RecorderFragment.TAG
-                supportFragmentManager.findFragmentByTag(tag) ?: RecorderFragment.newInstance()
+                RecorderFragment.newInstance()
             }
             Content.DEVICES -> {
-                tag = ListDevicesFragment.TAG
-                supportFragmentManager.findFragmentByTag(tag) ?: ListDevicesFragment.newInstance()
+                ListDevicesFragment.newInstance()
+            }
+            Content.DEVICE -> {
+                DeviceFragment.newInstance()
             }
         }
+
+        fragment.arguments = intent.extras
 
         contentBackStackIdentifier = supportFragmentManager
                 .beginTransaction()

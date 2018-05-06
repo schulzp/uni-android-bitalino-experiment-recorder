@@ -36,6 +36,6 @@ class ListRecordingsFragment : Fragment() {
     companion object {
         val TAG = Content.RECORDINGS.name
 
-        fun newInstance():ListRecordingsFragment { return ListRecordingsFragment() }
+        fun newInstance():ListRecordingsFragment = ListRecordingsFragment()
     }
 }

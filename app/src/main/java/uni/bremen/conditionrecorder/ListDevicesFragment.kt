@@ -22,6 +22,8 @@ import info.plux.pluxapi.BTHDeviceScan
 import info.plux.pluxapi.Constants
 import java.util.*
 
+import info.plux.pluxapi.Constants.*
+
 class ListDevicesFragment : ListFragment() {
 
     private lateinit var deviceListAdapter: DeviceListAdapter
@@ -175,9 +177,15 @@ class ListDevicesFragment : ListFragment() {
     }
 
     override fun onListItemClick(l: ListView, v: View, position: Int, id: Long) {
-        val device = deviceListAdapter!!.getDevice(position) ?: return
-
-        Log.d(TAG, "clicked device $device")
+        val device = deviceListAdapter.getDevice(position) ?: return
+        val intent = Intent(this.context, MainActivity::class.java)
+        intent.putExtra(EXTRA_SHOW_CONTENT, Content.DEVICE)
+        intent.putExtra(DeviceFragment.EXTRA_DEVICE, device)
+        if (mScanning) {
+            bthDeviceScan?.stopScan()
+            mScanning = false
+        }
+        startActivity(intent)
     }
 
     private fun scanDevice(enable: Boolean) {
@@ -290,7 +298,7 @@ class ListDevicesFragment : ListFragment() {
     companion object {
         val TAG = Content.DEVICES.name
 
-        fun newInstance():ListDevicesFragment { return ListDevicesFragment() }
+        fun newInstance():ListDevicesFragment = ListDevicesFragment()
     }
 
 }
