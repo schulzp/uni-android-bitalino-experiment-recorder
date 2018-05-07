@@ -18,11 +18,11 @@ class RecorderBus : GenericBus<GenericBus.Instance, RecorderBus.Event, RecorderB
     interface Event : GenericBus.Instance
     interface Command : GenericBus.Instance
 
-    class RecordingStared(val signalRecordingStarted: SignalRecordingStarted, val videoRecordingStarted: VideoRecordingStarted) : Event
-    class RecordingStopped(val signalRecordingStopped: SignalRecordingStopped, val videoRecordingStopped: VideoRecordingStopped) : Event
+    class RecordingStared(val bitalinoRecordingStarted: BitalinoRecordingStarted, val videoRecordingStarted: VideoRecordingStarted) : Event
+    class RecordingStopped(val bitalinoRecordingStopped: BitalinoRecordingStopped, val videoRecordingStopped: VideoRecordingStopped) : Event
 
-    class SignalRecordingStarted : Event
-    class SignalRecordingStopped : Event
+    class BitalinoRecordingStarted : Event
+    class BitalinoRecordingStopped : Event
 
     class VideoRecordingStarted : Event
     class VideoRecordingStopped(val path:String) : Event

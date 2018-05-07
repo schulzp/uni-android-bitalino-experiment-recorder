@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.fragment_recorder_controls.*
 
 class RecorderControlsFragment : Fragment() {
@@ -18,20 +17,18 @@ class RecorderControlsFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        recorderServiceConnection = RecorderService.bind(activity!!).also { connection ->
-            connection.connected {
-                connection.dispose(it.recording.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
-                    when(it) {
-                        is RecorderBus.RecordingStared -> {
-                            recordButton.text = getString(R.string.stop)
-                            recording = true
-                        }
-                        is RecorderBus.RecordingStopped -> {
-                            recordButton.text = getString(R.string.record)
-                            recording = false
-                        }
+        recorderServiceConnection = RecorderService.bind(activity!!) { _, service ->
+            service.recording.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
+                when(it) {
+                    is RecorderBus.RecordingStared -> {
+                        recordButton.text = getString(R.string.stop)
+                        recording = true
                     }
-                })
+                    is RecorderBus.RecordingStopped -> {
+                        recordButton.text = getString(R.string.record)
+                        recording = false
+                    }
+                }
             }
         }
     }
@@ -50,9 +47,13 @@ class RecorderControlsFragment : Fragment() {
 
         recordButton.setOnClickListener {
                     if (recording)
-                        recorderServiceConnection?.service?.recorderBus?.post(RecorderBus.StopRecording(), RecorderBus.SignalRecordingStopped())
+                        recorderServiceConnection
+                                .whenConnected { _, service ->
+                                    service.bus.post(RecorderBus.StopRecording(), RecorderBus.BitalinoRecordingStopped()) }
                     else
-                        recorderServiceConnection?.service?.recorderBus?.post(RecorderBus.StartRecording(), RecorderBus.SignalRecordingStarted())
+                        recorderServiceConnection
+                                .whenConnected { _, service ->
+                                    service.bus.post(RecorderBus.StartRecording(), RecorderBus.BitalinoRecordingStarted()) }
         }
     }
 

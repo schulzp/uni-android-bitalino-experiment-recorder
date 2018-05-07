@@ -15,11 +15,9 @@ class RecorderFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        recorderServiceConnection = RecorderService.bind(activity!!).also { connection ->
-            connection.connected {
-                connection.dispose(it.recordingStopped.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
-                    showToast(it.videoRecordingStopped.path)
-                })
+        recorderServiceConnection = RecorderService.bind(activity!!) { _, service ->
+            service.recordingStopped.subscribeOn(AndroidSchedulers.mainThread()).subscribe { event ->
+                showToast(event.videoRecordingStopped.path)
             }
         }
     }

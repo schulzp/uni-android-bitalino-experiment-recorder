@@ -43,7 +43,6 @@ import android.view.*
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.fragment_recorder_video.*
 import java.io.IOException
 import java.util.Collections
@@ -100,11 +99,13 @@ class RecorderVideoFragment : Fragment(),
      */
     private var isRecordingVideo = false
         set(value) {
-            recorderServiceConnection.service?.recorderBus?.post(
-                    if (value)
-                        RecorderBus.VideoRecordingStarted()
-                    else
-                        RecorderBus.VideoRecordingStopped(nextVideoAbsolutePath ?: "unknown"))
+            recorderServiceConnection.whenConnected { _, service ->
+                service.bus.post(
+                        if (value)
+                            RecorderBus.VideoRecordingStarted()
+                        else
+                            RecorderBus.VideoRecordingStopped(nextVideoAbsolutePath ?: "unknown"))
+            }
         }
 
     /**
@@ -171,16 +172,20 @@ class RecorderVideoFragment : Fragment(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        recorderServiceConnection = RecorderService.bind(activity!!).also { connection ->
-            connection.connected {
-                connection.dispose(it.recorderBus.commandSubject.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
-                    when (it) {
-                        is RecorderBus.StartRecording -> startRecordingVideo()
-                        is RecorderBus.StopRecording -> stopRecordingVideo()
-                    }
-                })
+        recorderServiceConnection = RecorderService.bind(activity!!) { _, service ->
+            service.bus.commandSubject.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
+                when (it) {
+                    is RecorderBus.StartRecording -> startRecordingVideo()
+                    is RecorderBus.StopRecording -> stopRecordingVideo()
+                }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        recorderServiceConnection.close(activity!!)
     }
 
     override fun onCreateView(inflater: LayoutInflater,

@@ -16,16 +16,16 @@ import java.util.*
 
 class RecorderService : Service() {
 
-    val recorderBus:RecorderBus = RecorderBus()
+    val bus:RecorderBus = RecorderBus()
 
-    val signalRecoringStared = recorderBus.eventSubject.filter { it is RecorderBus.SignalRecordingStarted }.map { it as RecorderBus.SignalRecordingStarted }
-    val signalRecordingStopped = recorderBus.eventSubject.filter { it is RecorderBus.SignalRecordingStopped }.map { it as RecorderBus.SignalRecordingStopped }
+    val bitalinoRecoringStared = bus.eventSubject.filter { it is RecorderBus.BitalinoRecordingStarted }.map { it as RecorderBus.BitalinoRecordingStarted }
+    val bitalinoRecordingStopped = bus.eventSubject.filter { it is RecorderBus.BitalinoRecordingStopped }.map { it as RecorderBus.BitalinoRecordingStopped }
 
-    val videoRecordingStarted = recorderBus.eventSubject.filter { it is RecorderBus.VideoRecordingStarted }.map { it as RecorderBus.VideoRecordingStarted }
-    val videoRecordingStopped = recorderBus.eventSubject.filter { it is RecorderBus.VideoRecordingStopped }.map { it as RecorderBus.VideoRecordingStopped }
+    val videoRecordingStarted = bus.eventSubject.filter { it is RecorderBus.VideoRecordingStarted }.map { it as RecorderBus.VideoRecordingStarted }
+    val videoRecordingStopped = bus.eventSubject.filter { it is RecorderBus.VideoRecordingStopped }.map { it as RecorderBus.VideoRecordingStopped }
 
-    val recordingStarted = videoRecordingStarted.zipWith(signalRecoringStared, { v, s -> RecorderBus.RecordingStared(s, v) })
-    val recordingStopped = videoRecordingStopped.zipWith(signalRecordingStopped, { v, s -> RecorderBus.RecordingStopped(s, v) })
+    val recordingStarted = videoRecordingStarted.zipWith(bitalinoRecoringStared, { v, s -> RecorderBus.RecordingStared(s, v) })
+    val recordingStopped = videoRecordingStopped.zipWith(bitalinoRecordingStopped, { v, s -> RecorderBus.RecordingStopped(s, v) })
 
     val recording = Observable.merge(recordingStarted, recordingStopped)
 
@@ -35,8 +35,10 @@ class RecorderService : Service() {
 
     override fun onBind(intent: Intent): IBinder = binder
 
-    fun onResume() {
-        disposables["commands"] = recorderBus.commandSubject.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
+    override fun onCreate() {
+        super.onCreate()
+
+        disposables["commands"] = bus.commandSubject.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
             when (it) {
                 is RecorderBus.StartRecording -> startRecording()
                 is RecorderBus.StopRecording -> stopRecording()
@@ -67,24 +69,23 @@ class RecorderService : Service() {
 
     class Connection : ServiceConnection {
 
-        var service:RecorderService? = null
+        private var service:RecorderService? = null
 
         private val disposables = LinkedList<Disposable>()
 
-        private val listeners = LinkedList<(service:RecorderService) -> Unit>()
+        private val queue = LinkedList<(connection:Connection, service:RecorderService) -> Any>()
 
         override fun onServiceConnected(source: ComponentName, binder: IBinder) {
-            Log.d(TAG, "service connected")
             if (binder is RecorderService.Binder) {
                 service = binder.getService()
-                notifyConnected()
+                processQueue()
             }
         }
 
         override fun onServiceDisconnected(source: ComponentName) {
             service = null
 
-            listeners.clear()
+            queue.clear()
 
             with(disposables) {
                 forEach { it.dispose() }
@@ -92,20 +93,30 @@ class RecorderService : Service() {
             }
         }
 
-        fun connected(listener: (service:RecorderService) -> Unit) {
-            listeners.add(listener)
-            notifyConnected()
-        }
-
-        fun dispose(disposable: Disposable) {
-            disposables.add(disposable)
+        fun whenConnected(listener: (connection: Connection, service: RecorderService) -> Any) {
+            synchronized(queue) {
+                queue.add(listener)
+            }
+            processQueue()
         }
 
         fun close(activity: Activity) = activity.unbindService(this)
 
-        private fun notifyConnected() {
+        private fun disposeOnClose(disposable: Disposable) {
+            disposables.add(disposable)
+        }
+
+        private fun processQueue() {
             if (service != null) {
-                listeners.forEach { it.invoke(service!!) }
+                synchronized(queue) {
+                    queue.forEach { callback ->
+                        val res = callback(this, service!!)
+                        if (res is Disposable) {
+                            disposeOnClose(res)
+                        }
+                    }
+                    queue.clear()
+                }
             }
         }
 
@@ -115,8 +126,14 @@ class RecorderService : Service() {
 
         const val TAG = "RecorderService"
 
-        fun bind(activity: Activity):Connection {
-            return Connection().also { activity.bindService(Intent(activity, RecorderService::class.java), it, Context.BIND_AUTO_CREATE) }
+        fun bind(context: Context, listener: ((connection: Connection, service: RecorderService) -> Unit)? = null):Connection {
+            return Connection()
+                    .also { connection ->  context.bindService(
+                            Intent(context, RecorderService::class.java),
+                            connection,
+                            Context.BIND_AUTO_CREATE)
+                    }
+                    .also { connection ->  if (listener != null) connection.whenConnected(listener) }
         }
 
     }
