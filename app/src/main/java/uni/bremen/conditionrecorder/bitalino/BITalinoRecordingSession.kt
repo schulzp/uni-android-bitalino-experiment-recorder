@@ -57,7 +57,7 @@ class BITalinoRecordingSession(val service: RecorderService, val bluetoothDevice
                     }
                 }
 
-                service.bus.post(RecorderBus.BITalioStateChanged(bluetoothDevice, state))
+                service.bus.post(RecorderBus.DeviceStateChanged(bluetoothDevice, state))
 
             } else if (Constants.ACTION_DATA_AVAILABLE == action) {
                 if (intent.hasExtra(Constants.EXTRA_DATA)) {
@@ -88,7 +88,7 @@ class BITalinoRecordingSession(val service: RecorderService, val bluetoothDevice
     }
 
     fun start() {
-        var communication = Communication.getById(bluetoothDevice!!.type)
+        var communication = Communication.getById(bluetoothDevice.type)
 
         Log.d(RecorderService.TAG, "communication: ${communication.name}")
 
@@ -100,7 +100,7 @@ class BITalinoRecordingSession(val service: RecorderService, val bluetoothDevice
 
         service.registerReceiver(updateReceiver, makeUpdateIntentFilter())
 
-        bitalino!!.connect(bluetoothDevice!!.address)
+        bitalino!!.connect(bluetoothDevice.address)
     }
 
     fun close() {

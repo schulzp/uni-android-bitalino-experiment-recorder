@@ -9,6 +9,9 @@
     <color name="accentLight">#fff263</color>
     <color name="accentDark">#c49000</color>
 
-    <color name="disconnected">#a0a0a0</color>
-    <color name="connected">@color/primaryLight</color>
+    <color name="deviceStatusDisconnected">#a0a0a0</color>
+    <color name="deviceStatusConnecting">@color/primaryLight</color>
+    <color name="deviceStatusConnected">@color/primary</color>
+    <color name="deviceStatus">#555555</color>
+    <color name="separator">#cccccc</color>
 </resources>

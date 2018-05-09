@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
+import info.plux.pluxapi.Constants
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.fragment_recorder_device_list.*
 import java.util.*
@@ -29,9 +30,9 @@ class RecorderDeviceListFragment : ListFragment(), AdapterView.OnItemClickListen
 
             listOf(
                     service.bus.deviceSelected.subscribeOn(scheduler)
-                            .subscribe { selected -> adapter.add(selected.device) },
-                    service.bus.bitalinoStateChange.subscribeOn(scheduler)
-                            .subscribe { change -> adapter.notifyDataSetChanged() })
+                            .subscribe { selected -> addDevice(selected.device) },
+                    service.bus.deviceStateChange.subscribeOn(scheduler)
+                            .subscribe { change -> updateDevice(change.device, change.state) })
         }
 
         empty.setOnClickListener {
@@ -55,7 +56,7 @@ class RecorderDeviceListFragment : ListFragment(), AdapterView.OnItemClickListen
     override fun onPause() {
         super.onPause()
 
-        recorderServiceConnection?.close(context!!)
+        recorderServiceConnection.close(context!!)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
@@ -70,6 +71,24 @@ class RecorderDeviceListFragment : ListFragment(), AdapterView.OnItemClickListen
 
     override fun onItemClick(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
 
+    }
+
+    private fun addDevice(device: BluetoothDevice) {
+        adapter.add(DeviceListAdapter.BITalinoBluetoothDevice(device))
+        adapter.notifyDataSetChanged()
+    }
+
+    private fun updateDevice(device: BluetoothDevice, state:Any?) {
+        val statefulBluetoothDevice = adapter.find(device)
+        if (statefulBluetoothDevice != null) {
+            when (statefulBluetoothDevice) {
+                is DeviceListAdapter.BITalinoBluetoothDevice -> {
+                    statefulBluetoothDevice.state = state as? Constants.States
+                }
+            }
+            val view = listView.getChildAt(statefulBluetoothDevice.position - listView.firstVisiblePosition)
+            listView.adapter.getView(statefulBluetoothDevice.position, view, listView)
+        }
     }
 
     companion object {

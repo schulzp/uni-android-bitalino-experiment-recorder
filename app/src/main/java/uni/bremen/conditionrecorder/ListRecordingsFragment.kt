@@ -17,6 +17,7 @@ class ListRecordingsFragment : Fragment() {
         with(activity as MainActivity) {
             with(getFab()) {
                 title = resources.getString(R.string.recordings)
+                setFullScreen(false)
                 setDrawerEnabled(true)
                 updateDrawerMenu(R.id.contentRecordings)
 

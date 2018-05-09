@@ -2,7 +2,6 @@ package uni.bremen.conditionrecorder
 
 import android.bluetooth.BluetoothDevice
 import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.zipWith
 
 
@@ -29,9 +28,9 @@ class RecorderBus : GenericBus<GenericBus.Instance, RecorderBus.Event, RecorderB
             .filter { event -> event is RecorderBus.SelectedDevice }
             .map { event -> event as RecorderBus.SelectedDevice }
 
-    val bitalinoStateChange =  eventSubject
-            .filter { event -> event is RecorderBus.BITalioStateChanged }
-            .map { event -> event as RecorderBus.BITalioStateChanged }
+    val deviceStateChange =  eventSubject
+            .filter { event -> event is RecorderBus.DeviceStateChanged }
+            .map { event -> event as RecorderBus.DeviceStateChanged }
 
     val recording = Observable.merge(recordingStarted, recordingStopped)
 
@@ -53,6 +52,6 @@ class RecorderBus : GenericBus<GenericBus.Instance, RecorderBus.Event, RecorderB
     class SelectDevice : Command
     class SelectedDevice(val device: BluetoothDevice) : Event
 
-    class BITalioStateChanged(val device: BluetoothDevice, val state: Any) : Event
+    class DeviceStateChanged(val device: BluetoothDevice, val state: Any) : Event
 
 }

@@ -14,6 +14,8 @@
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
+        android:padding="0dp"
+        android:layout_margin="0dp"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fitsSystemWindows="true">
@@ -30,17 +32,19 @@
                 android:theme="@style/AppTheme.ToolBar"
                 app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
                 app:subtitleTextAppearance="@style/AppTheme.ToolBar.Subtitle"
-                app:titleTextAppearance="@style/AppTheme.ToolBar.Title"
-                app:layout_scrollFlags="scroll|enterAlways" />
+                app:titleTextAppearance="@style/AppTheme.ToolBar.Title" />
 
         </android.support.design.widget.AppBarLayout>
 
-        <android.support.v4.widget.NestedScrollView
+        <FrameLayout
             android:id="@+id/main_fragment"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior">
-        </android.support.v4.widget.NestedScrollView>
+            android:layout_gravity="fill_vertical"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:fitsSystemWindows="true">
+        </FrameLayout>
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab"

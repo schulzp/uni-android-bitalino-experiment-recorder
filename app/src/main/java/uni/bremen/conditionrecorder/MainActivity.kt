@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
+import android.support.design.widget.AppBarLayout
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.Fragment
 import android.support.v4.view.GravityCompat
@@ -15,7 +16,16 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import kotlinx.android.synthetic.main.activity_main.*
+import android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+import android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+import android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+import android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+import android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+import android.view.View.SYSTEM_UI_FLAG_IMMERSIVE
+
+
 
 
 class MainActivity : AppCompatActivity() {
@@ -148,6 +158,61 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private var fullscreen: Boolean = false
+
+    internal fun setFullScreen(enabled: Boolean) {
+        this.fullscreen = enabled
+        val flags = if (enabled)
+            (View.SYSTEM_UI_FLAG_IMMERSIVE
+                // Set the content to appear under the system bars so that the
+                // content doesn't resize when the system bars hide and show.
+                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                // Hide the nav bar and status bar
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN)
+        else
+            (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+
+
+        val appBarLayout = toolbar.parent as AppBarLayout
+        if (enabled) {
+            appBarLayout.setExpanded(false, true)
+            appBarLayout.visibility = View.GONE
+        } else {
+            appBarLayout.visibility = View.VISIBLE
+            appBarLayout.setExpanded(true, true)
+        }
+
+        window.decorView.setOnSystemUiVisibilityChangeListener(View.OnSystemUiVisibilityChangeListener { visibility ->
+            // Note that system bars will only be "visible" if none of the
+            // LOW_PROFILE, HIDE_NAVIGATION, or FULLSCREEN flags are set.
+            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
+                // TODO: The system bars are visible. Make any desired
+                // adjustments to your UI, such as showing the action bar or
+                // other navigational controls.
+            } else {
+                // TODO: The system bars are NOT visible. Make any desired
+                // adjustments to your UI, such as hiding the action bar or
+                // other navigational controls.
+            }
+
+            main_fragment.invalidate()
+        })
+        window.decorView.systemUiVisibility = flags
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+
+        if (hasFocus) {
+            setFullScreen(fullscreen)
         }
     }
 

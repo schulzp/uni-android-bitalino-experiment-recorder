@@ -6,6 +6,11 @@
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primaryDark</item>
         <item name="colorAccent">@color/accent</item>
+
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
     </style>
 
     <style name="AppTheme.ToolBar" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -36,5 +41,35 @@
 
     <style name="AppTheme.FabStyle">
         <item name="android:tint">@color/primaryInverse</item>
+    </style>
+
+    <style name="AppTheme.DeviceItem">
+
+    </style>
+
+    <style name="AppTheme.DeviceItem.Container">
+        <item name="android:paddingStart">?android:attr/listPreferredItemPaddingStart</item>
+        <item name="android:paddingEnd">?android:attr/listPreferredItemPaddingEnd</item>
+        <item name="android:minHeight">?android:attr/listPreferredItemHeightSmall</item>
+    </style>
+
+    <style name="AppTheme.DeviceItem.Name">
+        <item name="android:textAppearance">?android:attr/textAppearanceListItem</item>
+    </style>
+
+    <style name="AppTheme.DeviceItem.Address">
+        <item name="android:textAppearance">?android:attr/textAppearanceListItemSecondary</item>
+    </style>
+
+    <style name="AppTheme.DeviceItem.Status">
+        <item name="android:textAppearance">@style/TextAppearance.DeviceItem.Status</item>
+        <item name="android:gravity">center_vertical|center_horizontal</item>
+        <item name="android:drawableLeft">@drawable/ic_connected_indicator</item>
+        <item name="android:drawablePadding">2dp</item>
+    </style>
+
+    <style name="TextAppearance.DeviceItem.Status" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textColor">@color/deviceStatus</item>
+        <item name="android:textSize">4sp</item>
     </style>
 </resources>

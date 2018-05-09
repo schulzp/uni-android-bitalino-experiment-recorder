@@ -66,7 +66,9 @@ class ListDevicesFragment : ListFragment() {
 
         with(activity as MainActivity) {
             title = resources.getString(R.string.devices)
+            setFullScreen(false)
             setDrawerEnabled(false)
+
             updateDrawerMenu(R.id.contentDevices)
 
             with(getFab()) {
@@ -181,11 +183,11 @@ class ListDevicesFragment : ListFragment() {
 
         if (activity?.intent?.action == Intent.ACTION_PICK && activity?.intent?.type == INTENT_TYPE_DEVICE) {
             var result = Intent()
-            result.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
+            result.putExtra(BluetoothDevice.EXTRA_DEVICE, device.device)
             activity?.setResult(Activity.RESULT_OK, result)
             activity?.finish()
         } else {
-            startActivity(MainActivity.createViewDeviceIntent(context!!, device))
+            startActivity(MainActivity.createViewDeviceIntent(context!!, device.device))
         }
     }
 
@@ -215,7 +217,7 @@ class ListDevicesFragment : ListFragment() {
                 val bluetoothDevice = intent.getParcelableExtra<BluetoothDevice>(Constants.EXTRA_DEVICE_SCAN)
 
                 if (bluetoothDevice != null) {
-                    deviceListAdapter!!.add(bluetoothDevice)
+                    deviceListAdapter!!.add(DeviceListAdapter.BITalinoBluetoothDevice(bluetoothDevice))
                     deviceListAdapter!!.notifyDataSetChanged()
                 }
             }
