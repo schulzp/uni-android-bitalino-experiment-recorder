@@ -8,4 +8,7 @@
     <color name="accent">#fbc02d</color>
     <color name="accentLight">#fff263</color>
     <color name="accentDark">#c49000</color>
+
+    <color name="disconnected">#a0a0a0</color>
+    <color name="connected">@color/primaryLight</color>
 </resources>

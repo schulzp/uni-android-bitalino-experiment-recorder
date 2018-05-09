@@ -1,7 +1,10 @@
 package uni.bremen.conditionrecorder
 
 import android.bluetooth.BluetoothDevice
+import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.Fragment
@@ -19,45 +22,47 @@ class MainActivity : AppCompatActivity() {
 
     private var contentBackStackIdentifier:Int? = -1
 
-    private lateinit var supportActionBarDrawerToggle:ActionBarDrawerToggle
+    private var supportActionBarDrawerToggle:ActionBarDrawerToggle? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
-
-        Log.d(TAG, "create main activity: ${intent.getSerializableExtra(EXTRA_SHOW_CONTENT)} ${intent.getParcelableExtra<BluetoothDevice>(DeviceFragment.EXTRA_DEVICE)}")
+        Log.d(TAG, "started with ${intent.action} (${intent.type})")
 
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
-        supportActionBarDrawerToggle = ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close)
+        if (intent.action == Intent.ACTION_PICK && intent.type == INTENT_TYPE_DEVICE) {
+            setContent(Content.DEVICES)
+        } else {
+            supportActionBarDrawerToggle = ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close)
 
-        navigationView.setNavigationItemSelectedListener { menuItem ->
-            // set item as selected to persist highlight
-            menuItem.isChecked = true
+            navigationView.setNavigationItemSelectedListener { menuItem ->
+                // set item as selected to persist highlight
+                menuItem.isChecked = true
 
-            // close drawer when item is tapped
-            drawerLayout.closeDrawers()
+                // close drawer when item is tapped
+                drawerLayout.closeDrawers()
 
-            when (menuItem.itemId) {
-                R.id.contentDevices -> setContent(Content.DEVICES)
-                R.id.contentRecordings -> setContent(Content.RECORDINGS)
+                when (menuItem.itemId) {
+                    R.id.contentDevices -> setContent(Content.DEVICES)
+                    R.id.contentRecordings -> setContent(Content.RECORDINGS)
+                }
+
+                true
             }
 
-            true
+            setContent(Content.RECORDINGS)
         }
-
-        setContent(intent.getSerializableExtra(EXTRA_SHOW_CONTENT) as? Content ?: Content.RECORDINGS)
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
-        supportActionBarDrawerToggle.syncState()
+        supportActionBarDrawerToggle?.syncState()
         super.onPostCreate(savedInstanceState)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration?) {
-        supportActionBarDrawerToggle.onConfigurationChanged(newConfig)
+        supportActionBarDrawerToggle?.onConfigurationChanged(newConfig)
         super.onConfigurationChanged(newConfig)
     }
 
@@ -71,7 +76,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        supportActionBarDrawerToggle.onOptionsItemSelected(item)
+        supportActionBarDrawerToggle?.onOptionsItemSelected(item)
 
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -87,11 +92,11 @@ class MainActivity : AppCompatActivity() {
             supportActionBar?.setDisplayHomeAsUpEnabled(!value)
             supportActionBar?.setDisplayShowHomeEnabled(!value)
 
-            supportActionBarDrawerToggle.isDrawerIndicatorEnabled = value
+            supportActionBarDrawerToggle?.isDrawerIndicatorEnabled = value
 
             toolbar.setNavigationOnClickListener { _ -> drawerLayout.openDrawer(GravityCompat.START) }
         } else {
-            supportActionBarDrawerToggle.isDrawerIndicatorEnabled = value
+            supportActionBarDrawerToggle?.isDrawerIndicatorEnabled = value
 
             supportActionBar?.setDisplayHomeAsUpEnabled(!value)
             supportActionBar?.setDisplayShowHomeEnabled(!value)
@@ -157,6 +162,21 @@ class MainActivity : AppCompatActivity() {
     companion object {
 
         const val TAG = "MainActivity"
+
+        fun createPickDeviceIntent(context: Context):Intent {
+            val intent = Intent(Intent.ACTION_PICK, URI_DEVICES, context, MainActivity::class.java)
+            intent.type = INTENT_TYPE_DEVICE
+            return intent
+        }
+
+        fun createViewDeviceIntent(context: Context, device:BluetoothDevice?):Intent {
+            val intent = Intent(Intent.ACTION_VIEW, URI_DEVICE, context, MainActivity::class.java)
+            intent.type = INTENT_TYPE_DEVICE
+            if (device != null) {
+                intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
+            }
+            return intent
+        }
 
     }
 

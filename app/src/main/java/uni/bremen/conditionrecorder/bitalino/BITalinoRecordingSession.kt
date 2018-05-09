@@ -11,10 +11,11 @@ import info.plux.pluxapi.Communication
 import info.plux.pluxapi.Constants
 import info.plux.pluxapi.bitalino.*
 import info.plux.pluxapi.bitalino.bth.OnBITalinoDataAvailable
+import uni.bremen.conditionrecorder.RecorderBus
 import uni.bremen.conditionrecorder.RecorderDeviceFragment
 import uni.bremen.conditionrecorder.RecorderService
 
-class BITalinoRecordingSession(val context: Context, val bluetoothDevice: BluetoothDevice) {
+class BITalinoRecordingSession(val service: RecorderService, val bluetoothDevice: BluetoothDevice) {
 
     private var bitalino: BITalinoCommunication? = null
 
@@ -55,6 +56,9 @@ class BITalinoRecordingSession(val context: Context, val bluetoothDevice: Blueto
                     Constants.States.ENDED -> {
                     }
                 }
+
+                service.bus.post(RecorderBus.BITalioStateChanged(bluetoothDevice, state))
+
             } else if (Constants.ACTION_DATA_AVAILABLE == action) {
                 if (intent.hasExtra(Constants.EXTRA_DATA)) {
                     val parcelable = intent.getParcelableExtra<Parcelable>(Constants.EXTRA_DATA)
@@ -92,13 +96,15 @@ class BITalinoRecordingSession(val context: Context, val bluetoothDevice: Blueto
             communication = Communication.BLE
         }
 
-        bitalino = BITalinoCommunicationFactory().getCommunication(communication, context, dataReceiver)
+        bitalino = BITalinoCommunicationFactory().getCommunication(communication, service, dataReceiver)
 
-        context.registerReceiver(updateReceiver, makeUpdateIntentFilter())
+        service.registerReceiver(updateReceiver, makeUpdateIntentFilter())
+
+        bitalino!!.connect(bluetoothDevice!!.address)
     }
 
     fun close() {
-        context.unregisterReceiver(updateReceiver)
+        service.unregisterReceiver(updateReceiver)
 
         try {
             bitalino?.closeReceivers()

@@ -14,9 +14,8 @@ class RecorderFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         recorderServiceConnection = RecorderService.bind(activity!!) { _, service ->
-            service.recordingStopped.subscribeOn(AndroidSchedulers.mainThread()).subscribe { event ->
+            service.bus.recordingStopped.subscribeOn(AndroidSchedulers.mainThread()).subscribe { event ->
                 showToast(event.videoRecordingStopped.path)
             }
         }
@@ -36,6 +35,7 @@ class RecorderFragment : Fragment() {
 
         childFragmentManager.beginTransaction()
                 .replace(R.id.videoPlaceholder, RecorderVideoFragment.newInstance())
+                .replace(R.id.devicesPlaceholder, RecorderDeviceListFragment.newInstance())
                 .replace(R.id.controlsPlaceholder, RecorderControlsFragment.newInstance())
                 .commit()
     }

@@ -18,7 +18,7 @@ class RecorderControlsFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         recorderServiceConnection = RecorderService.bind(activity!!) { _, service ->
-            service.recording.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
+            service.bus.recording.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
                 when(it) {
                     is RecorderBus.RecordingStared -> {
                         recordButton.text = getString(R.string.stop)

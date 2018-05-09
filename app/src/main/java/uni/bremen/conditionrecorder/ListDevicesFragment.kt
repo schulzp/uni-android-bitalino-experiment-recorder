@@ -13,13 +13,11 @@ import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.ListFragment
 import android.view.*
-import android.widget.BaseAdapter
 import android.widget.ListView
-import android.widget.TextView
 import android.widget.Toast
 import info.plux.pluxapi.BTHDeviceScan
 import info.plux.pluxapi.Constants
-import java.util.*
+import kotlin.collections.ArrayList
 
 class ListDevicesFragment : ListFragment() {
 
@@ -119,8 +117,8 @@ class ListDevicesFragment : ListFragment() {
         }
 
         // Initializes list view adapter.
-        deviceListAdapter = DeviceListAdapter()
-        setListAdapter(deviceListAdapter)
+        deviceListAdapter = DeviceListAdapter(context!!, ArrayList())
+        listAdapter = deviceListAdapter
         scanDevice(true)
     }
 
@@ -174,15 +172,21 @@ class ListDevicesFragment : ListFragment() {
     }
 
     override fun onListItemClick(l: ListView, v: View, position: Int, id: Long) {
-        val device = deviceListAdapter.getDevice(position) ?: return
-        val intent = Intent(this.context, MainActivity::class.java)
-        intent.putExtra(EXTRA_SHOW_CONTENT, Content.DEVICE)
-        intent.putExtra(DeviceFragment.EXTRA_DEVICE, device)
+        val device = deviceListAdapter.getItem(position)
+
         if (mScanning) {
             bthDeviceScan?.stopScan()
             mScanning = false
         }
-        startActivity(intent)
+
+        if (activity?.intent?.action == Intent.ACTION_PICK && activity?.intent?.type == INTENT_TYPE_DEVICE) {
+            var result = Intent()
+            result.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
+            activity?.setResult(Activity.RESULT_OK, result)
+            activity?.finish()
+        } else {
+            startActivity(MainActivity.createViewDeviceIntent(context!!, device))
+        }
     }
 
     private fun scanDevice(enable: Boolean) {
@@ -211,74 +215,11 @@ class ListDevicesFragment : ListFragment() {
                 val bluetoothDevice = intent.getParcelableExtra<BluetoothDevice>(Constants.EXTRA_DEVICE_SCAN)
 
                 if (bluetoothDevice != null) {
-                    deviceListAdapter!!.addDevice(bluetoothDevice)
+                    deviceListAdapter!!.add(bluetoothDevice)
                     deviceListAdapter!!.notifyDataSetChanged()
                 }
             }
         }
-    }
-
-    // Adapter for holding devices found through scanning.
-    private inner class DeviceListAdapter : BaseAdapter() {
-        private val devices: ArrayList<BluetoothDevice> = ArrayList()
-        private val mInflator: LayoutInflater? = activity?.getLayoutInflater()
-
-        fun addDevice(device: BluetoothDevice) {
-            if (!devices.contains(device)) {
-                devices.add(device)
-            }
-        }
-
-        fun getDevice(position: Int): BluetoothDevice? {
-            return devices[position]
-        }
-
-        fun clear() {
-            devices.clear()
-        }
-
-        override fun getCount(): Int {
-            return devices.size
-        }
-
-        override fun getItem(i: Int): Any {
-            return devices[i]
-        }
-
-        override fun getItemId(i: Int): Long {
-            return i.toLong()
-        }
-
-        override fun getView(i: Int, view: View?, viewGroup: ViewGroup): View {
-            var view = view
-            val viewHolder: ViewHolder
-            // General ListView optimization code.
-            if (view == null) {
-                view = mInflator?.inflate(R.layout.listitem_device, null)
-                viewHolder = ViewHolder()
-                viewHolder.deviceAddress = view!!.findViewById(R.id.device_address) as TextView
-                viewHolder.deviceName = view.findViewById(R.id.device_name) as TextView
-                view.tag = viewHolder
-            } else {
-                viewHolder = view.tag as ViewHolder
-            }
-
-            val device = devices[i]
-            val deviceName = device.name
-            if (deviceName != null && deviceName.length > 0) {
-                viewHolder.deviceName!!.text = deviceName
-            } else {
-                viewHolder.deviceName!!.text = "BITalino"
-            }
-            viewHolder.deviceAddress!!.text = device.address
-
-            return view
-        }
-    }
-
-    internal class ViewHolder {
-        var deviceName: TextView? = null
-        var deviceAddress: TextView? = null
     }
 
     private fun shouldShowRequestPermissionRationale(permissions: Array<String>) =

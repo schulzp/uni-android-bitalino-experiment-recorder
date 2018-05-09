@@ -1,6 +1,5 @@
 package uni.bremen.conditionrecorder
 
-import android.app.Activity
 import android.app.Service
 import android.bluetooth.BluetoothDevice
 import android.content.ComponentName
@@ -10,48 +9,28 @@ import android.content.ServiceConnection
 import android.os.HandlerThread
 import android.os.IBinder
 import android.util.Log
-import io.reactivex.Observable
-import io.reactivex.Scheduler
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
-import io.reactivex.rxkotlin.zipWith
 import uni.bremen.conditionrecorder.bitalino.BITalinoRecordingSession
 import java.util.*
+
 
 class RecorderService : Service() {
 
     val bus: RecorderBus = RecorderBus()
 
-    val bitalinoRecoringStared = bus.eventSubject.filter { it is RecorderBus.BitalinoRecordingStarted }.map { it as RecorderBus.BitalinoRecordingStarted }
-    val bitalinoRecordingStopped = bus.eventSubject.filter { it is RecorderBus.BitalinoRecordingStopped }.map { it as RecorderBus.BitalinoRecordingStopped }
-
-    val videoRecordingStarted = bus.eventSubject.filter { it is RecorderBus.VideoRecordingStarted }.map { it as RecorderBus.VideoRecordingStarted }
-    val videoRecordingStopped = bus.eventSubject.filter { it is RecorderBus.VideoRecordingStopped }.map { it as RecorderBus.VideoRecordingStopped }
-
-    val recordingStarted = videoRecordingStarted.zipWith(bitalinoRecoringStared, { v, s -> RecorderBus.RecordingStared(s, v) })
-    val recordingStopped = videoRecordingStopped.zipWith(bitalinoRecordingStopped, { v, s -> RecorderBus.RecordingStopped(s, v) })
-
-    val recording = Observable.merge(recordingStarted, recordingStopped)
-
     private val binder = Binder()
 
     private val disposables: MutableMap<String, Disposable> = HashMap()
 
-    private val handlerThread = HandlerThread(TAG)
-
-    private fun looper():Scheduler = AndroidSchedulers.from(handlerThread.looper)
+    private var handlerThread: HandlerThread? = null
 
     override fun onBind(intent: Intent): IBinder = binder
 
     override fun onCreate() {
         super.onCreate()
 
-        disposables["commands"] = bus.commandSubject.subscribeOn(looper()).subscribe {
-            when (it) {
-                is RecorderBus.StartRecording -> startRecording()
-                is RecorderBus.StopRecording -> stopRecording()
-            }
-        }
+        startThread()
     }
 
     override fun onDestroy() {
@@ -61,9 +40,11 @@ class RecorderService : Service() {
 
         disposables.values.forEach { it.dispose() }
         disposables.clear()
+
+        stopThread()
     }
 
-    fun startSession(bluetoothDevice: BluetoothDevice) {
+    fun createSession(bluetoothDevice: BluetoothDevice) {
         bitalinoRecordingSession = BITalinoRecordingSession(this, bluetoothDevice)
     }
 
@@ -81,10 +62,48 @@ class RecorderService : Service() {
         bitalinoRecordingSession?.close()
     }
 
+    @Synchronized
+    private fun startThread() {
+        if (handlerThread == null) {
+            handlerThread = BackgroundThread(TAG)
+            handlerThread?.start()
+        }
+    }
+
+    @Synchronized
+    private fun stopThread() {
+        if (handlerThread != null) {
+            val moribund = handlerThread
+            handlerThread = null
+            moribund?.interrupt()
+        }
+    }
 
     inner class Binder : android.os.Binder() {
 
         fun getService(): RecorderService = this@RecorderService
+
+    }
+
+    inner class BackgroundThread(tag: String) : HandlerThread(tag) {
+
+        override fun onLooperPrepared() {
+            val scheduler = AndroidSchedulers.from(looper)
+
+            disposables["commands"] = bus.commandSubject.subscribeOn(scheduler)
+                    .subscribe {
+                        when (it) {
+                            is RecorderBus.StartRecording -> startRecording()
+                            is RecorderBus.StopRecording -> stopRecording()
+                        }
+                    }
+
+            disposables["devices"] = bus.eventSubject.subscribeOn(scheduler)
+                    .filter { it is RecorderBus.SelectedDevice }
+                    .map { it as RecorderBus.SelectedDevice }
+                    .map { it.device }
+                    .subscribe { createSession(it) }
+        }
 
     }
 
@@ -121,7 +140,7 @@ class RecorderService : Service() {
             processQueue()
         }
 
-        fun close(activity: Activity) = activity.unbindService(this)
+        fun close(context: Context) = context.unbindService(this)
 
         private fun disposeOnClose(disposable: Disposable) {
             disposables.add(disposable)
@@ -132,6 +151,9 @@ class RecorderService : Service() {
                 synchronized(queue) {
                     queue.forEach { callback ->
                         val res = callback(this, service!!)
+                        if (res is List<*> && res.all { it is Disposable }) {
+                            res.forEach { disposeOnClose(it as Disposable) }
+                        }
                         if (res is Disposable) {
                             disposeOnClose(res)
                         }

@@ -1,6 +1,7 @@
 package uni.bremen.conditionrecorder
 
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.EXTRA_DEVICE
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -352,7 +353,6 @@ class DeviceFragment : Fragment(), OnBITalinoDataAvailable, View.OnClickListener
     companion object {
         val TAG = Content.DEVICE.name
 
-        const val EXTRA_DEVICE = "info.plux.pluxapi.sampleapp.DeviceActivity.EXTRA_DEVICE"
         const val FRAME = "info.plux.pluxapi.sampleapp.DeviceActivity.Frame"
 
         fun newInstance():DeviceFragment = DeviceFragment()
