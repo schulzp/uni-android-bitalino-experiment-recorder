@@ -12,6 +12,10 @@ import java.util.*
 
 class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDevice<*>> = LinkedList()) : GenericRecycleViewAdapter<DeviceListAdapter.StatefulBluetoothDevice<*>, String, DeviceListAdapter.DeviceViewHolder>(context, devices) {
 
+    init {
+        setHasStableIds(true)
+    }
+
     override val itemKeyProvider = DeviceKeyProvider()
 
     override val itemKeyStorageStrategy = StorageStrategy.createStringStorage()

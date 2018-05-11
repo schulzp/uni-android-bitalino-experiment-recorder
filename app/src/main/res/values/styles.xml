@@ -45,7 +45,11 @@
     <style name="AppTheme.Item.Container">
         <item name="android:paddingStart">?android:attr/listPreferredItemPaddingStart</item>
         <item name="android:paddingEnd">?android:attr/listPreferredItemPaddingEnd</item>
+        <item name="android:paddingTop">@dimen/item_padding_top</item>
+        <item name="android:paddingBottom">@dimen/item_padding_bottom</item>
         <item name="android:minHeight">?android:attr/listPreferredItemHeightSmall</item>
+
+        <item name="android:background">?android:attr/selectableItemBackground</item>
     </style>
 
     <style name="AppTheme.Item.Device">
@@ -96,4 +100,7 @@
     <style name="AppTheme.Item.Empty">
         <item name="android:gravity">center_vertical|center_horizontal</item>
     </style>
+
+    <dimen name="item_padding_top">5dp</dimen>
+    <dimen name="item_padding_bottom">5dp</dimen>
 </resources>

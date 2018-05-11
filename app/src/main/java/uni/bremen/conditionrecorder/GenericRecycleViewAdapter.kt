@@ -2,6 +2,7 @@ package uni.bremen.conditionrecorder
 
 import android.content.Context
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -38,7 +39,7 @@ abstract class GenericRecycleViewAdapter<I, K, V: GenericRecycleViewAdapter.Gene
 
     }
 
-    fun createActivationListener(delegate:OnItemSelectedListener<I>)
+    fun createActivationListener(delegate:OnItemSelectedListener<I, K>)
             : GenericOnItemActivatedListener = GenericOnItemActivatedListener(delegate)
 
     fun createItemDetailsLookup(view:RecyclerView) : GenericItemDetailsLookup = GenericItemDetailsLookup(view)
@@ -67,7 +68,7 @@ abstract class GenericRecycleViewAdapter<I, K, V: GenericRecycleViewAdapter.Gene
 
     abstract class GenericItemKeyProvider<K>(scope: Int) : androidx.recyclerview.selection.ItemKeyProvider<K>(scope)
 
-    class GenericItemDetails<K>(internal var selectionKey: K, internal var position: Int) : androidx.recyclerview.selection.ItemDetailsLookup.ItemDetails<K>() {
+    class GenericItemDetails<K>(internal var selectionKey: K, internal var position: Int = RecyclerView.NO_POSITION) : androidx.recyclerview.selection.ItemDetailsLookup.ItemDetails<K>() {
 
         override fun getSelectionKey(): K = selectionKey
 
@@ -92,16 +93,16 @@ abstract class GenericRecycleViewAdapter<I, K, V: GenericRecycleViewAdapter.Gene
 
     }
 
-    interface OnItemSelectedListener<I> {
+    interface OnItemSelectedListener<I, K> {
 
-        fun onItemSelected(item: I, details: ItemDetailsLookup.ItemDetails<*>):Boolean
+        fun onItemSelected(item: I, details: ItemDetailsLookup.ItemDetails<K>, motionEvent: MotionEvent):Boolean
 
     }
 
-    inner class GenericOnItemActivatedListener(val delegate: OnItemSelectedListener<I>) : OnItemActivatedListener<K> {
+    inner class GenericOnItemActivatedListener(private val delegate: OnItemSelectedListener<I, K>) : OnItemActivatedListener<K> {
 
-        override fun onItemActivated(item: ItemDetailsLookup.ItemDetails<K>, e: MotionEvent): Boolean {
-            return delegate.onItemSelected(items[item.position], item)
+        override fun onItemActivated(details: ItemDetailsLookup.ItemDetails<K>, e: MotionEvent): Boolean {
+            return delegate.onItemSelected(items[details.position], details, e)
         }
 
     }

@@ -11,7 +11,6 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
-import android.support.v4.app.Fragment
 import android.view.*
 import androidx.recyclerview.selection.ItemDetailsLookup
 import info.plux.pluxapi.BTHDeviceScan
@@ -29,9 +28,9 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
     private var bthDeviceScan: BTHDeviceScan? = null
     private var isScanDevicesUpdateReceiverRegistered = false
 
-    private val onItemSelectedListener = object:GenericRecycleViewAdapter.OnItemSelectedListener<DeviceListAdapter.StatefulBluetoothDevice<*>> {
+    private val onItemSelectedListener = object:GenericRecycleViewAdapter.OnItemSelectedListener<DeviceListAdapter.StatefulBluetoothDevice<*>, String> {
 
-        override fun onItemSelected(item: DeviceListAdapter.StatefulBluetoothDevice<*>, details: ItemDetailsLookup.ItemDetails<*>): Boolean {
+        override fun onItemSelected(item: DeviceListAdapter.StatefulBluetoothDevice<*>, details: ItemDetailsLookup.ItemDetails<String>, motionEvent: MotionEvent): Boolean {
             if (isScanning) {
                 bthDeviceScan?.stopScan()
                 isScanning = false
@@ -137,15 +136,18 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
             }
         }
 
-        // Initializes list view listAdapter.
-        listAdapter = DeviceListAdapter(activity!!)
+        setupList()
 
-        RecycleViewHelper.verticalList(list, activity!!).adapter = listAdapter
+        scanDevice(true)
+    }
+
+    private fun setupList() {
+        listAdapter = DeviceListAdapter(activity!!)
         listAdapter.createSelectionTracker(list, SELECTION_ID)
                 .withOnItemActivatedListener(listAdapter.createActivationListener(onItemSelectedListener))
                 .build()
 
-        scanDevice(true)
+        RecycleViewHelper.verticalList(list, activity!!).adapter = listAdapter
     }
 
     override fun onPause() {

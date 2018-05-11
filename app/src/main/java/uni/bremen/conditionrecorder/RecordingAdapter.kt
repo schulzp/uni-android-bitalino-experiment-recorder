@@ -1,6 +1,7 @@
 package uni.bremen.conditionrecorder
 
 import android.content.Context
+import android.util.Log
 import android.view.View
 import android.widget.TextView
 import androidx.recyclerview.selection.StorageStrategy
@@ -8,6 +9,10 @@ import java.util.*
 
 class RecordingAdapter(context: Context)
     : GenericRecycleViewAdapter<Recording, Long, RecordingAdapter.RecordingViewHolder>(context, LinkedList()) {
+
+    init {
+        setHasStableIds(true)
+    }
 
     override val itemKeyProvider = RecordingKeyProvider()
 
@@ -22,7 +27,19 @@ class RecordingAdapter(context: Context)
             date.text = item.start.toString()
 
             itemDetails.position = position
-            itemDetails.selectionKey = item.start.time
+            itemDetails.selectionKey = item.id
+
+            itemView.setOnTouchListener { view, motionEvent ->
+                Log.d("ITEM", "touched ($view), ($motionEvent)")
+                true
+            }
+
+            itemView.setOnClickListener {
+                Log.d("ITEM", "clicked ($it)")
+                true
+            }
+
+
         }
     }
 
@@ -33,19 +50,23 @@ class RecordingAdapter(context: Context)
                 view.findViewById(R.id.text3) as TextView)
     }
 
+    override fun getItemId(i: Int): Long {
+        return items[i].id
+    }
+
     inner class RecordingKeyProvider : GenericItemKeyProvider<Long>(0) {
 
-        override fun getKey(position: Int): Long = items[position].start.time
+        override fun getKey(position: Int): Long = items[position].id
 
         override fun getPosition(key: Long): Int {
             return items
-                    .find { recording -> recording.start.time == key }
+                    .find { recording -> recording.id == key }
                     ?.let { recording -> items.indexOf(recording) } ?: -1
         }
 
     }
 
     class RecordingViewHolder(view:View, val title: TextView, val subtitle: TextView, val date: TextView)
-        : GenericRecycleViewAdapter.GenericViewHolder<Long>(view, GenericItemDetails(0, -1))
+        : GenericRecycleViewAdapter.GenericViewHolder<Long>(view, GenericItemDetails(0))
 
 }
