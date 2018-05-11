@@ -6,10 +6,12 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.support.design.widget.AppBarLayout
+import android.support.design.widget.CoordinatorLayout
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.Fragment
 import android.support.v4.view.GravityCompat
 import android.support.v4.widget.DrawerLayout
+import android.support.v4.widget.NestedScrollView
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
@@ -21,8 +23,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
-
-    private var mainFragment:Fragment? = null
 
     private var contentBackStackIdentifier:Int? = -1
 
@@ -143,8 +143,6 @@ class MainActivity : AppCompatActivity() {
 
         fragment.arguments = intent.extras
 
-        mainFragment = fragment
-
         contentBackStackIdentifier = supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.main_fragment, fragment, tag)
@@ -168,14 +166,19 @@ class MainActivity : AppCompatActivity() {
     internal fun setFullScreen(enabled: Boolean) {
         val appBarLayout = toolbar.parent as AppBarLayout
 
+
         if (enabled) {
             setSupportActionBar(null)
             appBarLayout.setExpanded(false, true)
             appBarLayout.visibility = View.GONE
+            (main_fragment.layoutParams as CoordinatorLayout.LayoutParams).behavior = null
+            findViewById<View>(android.R.id.content).fitsSystemWindows = false
         } else {
             appBarLayout.visibility = View.VISIBLE
             appBarLayout.setExpanded(true, true)
             setSupportActionBar(toolbar)
+            (main_fragment.layoutParams as CoordinatorLayout.LayoutParams).behavior = AppBarLayout.ScrollingViewBehavior()
+            findViewById<View>(android.R.id.content).fitsSystemWindows = true
         }
     }
 

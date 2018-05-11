@@ -9,7 +9,7 @@ import android.widget.Toast
 import io.reactivex.android.schedulers.AndroidSchedulers
 
 
-class RecorderFragment : Fragment() {
+class RecorderFragment : FullscreenFragment() {
 
     private lateinit var recorderServiceConnection:RecorderService.Connection
 
@@ -30,6 +30,7 @@ class RecorderFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
             : View? = inflater.inflate(R.layout.fragment_recorder, container, false)
+            .also { it.fitsSystemWindows = false }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -53,12 +54,6 @@ class RecorderFragment : Fragment() {
             with(getFab()) {
                 hide()
             }
-
-            val display = windowManager.defaultDisplay
-            val width = display.width
-
-            //view?.layoutParams?.width = width
-            //view?.requestLayout()
         }
 
     }

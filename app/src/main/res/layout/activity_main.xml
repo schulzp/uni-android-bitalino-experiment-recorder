@@ -6,7 +6,6 @@
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
     tools:openDrawer="start"
     tools:context=".MainActivity">
 
@@ -14,6 +13,7 @@
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
+        android:background="#ff0000"
         android:padding="0dp"
         android:layout_margin="0dp"
         android:layout_width="match_parent"
@@ -22,8 +22,7 @@
         <android.support.design.widget.AppBarLayout
             android:layout_height="wrap_content"
             android:layout_width="match_parent"
-            android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-            android:fitsSystemWindows="true">
+            android:theme="@style/ThemeOverlay.AppCompat.ActionBar">
 
             <android.support.v7.widget.Toolbar
                 android:id="@+id/toolbar"
@@ -37,13 +36,14 @@
 
         </android.support.design.widget.AppBarLayout>
 
-        <FrameLayout
+        <android.support.v4.widget.NestedScrollView
+            android:background="#ffff00"
             android:id="@+id/main_fragment"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="fill_vertical"
             android:layout_weight="1">
-        </FrameLayout>
+        </android.support.v4.widget.NestedScrollView>
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab"
@@ -61,7 +61,6 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:fitsSystemWindows="true"
         app:headerLayout="@layout/nav_header_main"
         app:menu="@menu/activity_main_drawer" />
 

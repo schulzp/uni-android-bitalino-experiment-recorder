@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.Fragment
+import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
@@ -58,12 +59,16 @@ open class FullscreenFragment : Fragment(), Runnable {
     }
 
     private fun setFullscreen(activity: Activity) {
+        Log.d(TAG, "entering full screen")
         if (Build.VERSION.SDK_INT > 10) {
             var flags = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_FULLSCREEN
 
             if (isImmersiveAvailable) {
-                flags = flags or (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+                flags = flags or (
+                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
             }
 
             activity.window.decorView.systemUiVisibility = flags
@@ -74,6 +79,7 @@ open class FullscreenFragment : Fragment(), Runnable {
     }
 
     private fun exitFullscreen(activity: Activity) {
+        Log.d(TAG, "exiting full screen")
         if (Build.VERSION.SDK_INT > 10) {
             activity.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
         } else {
@@ -100,6 +106,8 @@ open class FullscreenFragment : Fragment(), Runnable {
     }
 
     companion object {
+
+        const val TAG = "FULL SCREEN FRAGMENT"
 
         val isImmersiveAvailable: Boolean
             get() = android.os.Build.VERSION.SDK_INT >= 19
