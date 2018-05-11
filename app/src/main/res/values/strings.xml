@@ -11,4 +11,8 @@
     <string name="drawer_close">Close Drawer</string>
     <string name="drawer_open">Open Drawer</string>
     <string name="select_device">Select Device</string>
+    <string name="no_recordings">There are no recordings</string>
+    <string name="no_items">No items available</string>
+    <string name="bluetooth_not_supported">Bluetooth is not supported</string>
+    <string name="bluetooth_le_not_supported">Bluetooth LE is not supported</string>
 </resources>

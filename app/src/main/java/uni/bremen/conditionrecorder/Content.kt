@@ -1,3 +1,10 @@
 package uni.bremen.conditionrecorder
 
-enum class Content { RECORDINGS, RECORDER, DEVICES, DEVICE }
+import android.net.Uri
+
+enum class Content(val builder: () -> Uri.Builder) {
+    RECORDINGS({uri().path("recordings")}),
+    RECORDER({uri().path("recordings")}),
+    DEVICES({uri().path("devices")}),
+    DEVICE({uri().path("devices")});
+}

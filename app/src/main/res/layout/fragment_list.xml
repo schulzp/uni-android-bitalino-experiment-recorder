@@ -8,25 +8,25 @@
         android:id="@android:id/list"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:scrollbars="vertical"
         app:layout_constraintVertical_chainStyle="spread_inside"
-        app:layout_constraintVertical_bias="0"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@android:id/empty"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
     </android.support.v7.widget.RecyclerView>
 
-    <Button
+    <TextView
+        style="@style/AppTheme.Item.Empty"
         android:id="@android:id/empty"
-        android:text="@string/select_device"
+        android:text="@string/no_items"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="0dp"
-        app:layout_constraintVertical_bias="1"
         app:layout_constraintTop_toBottomOf="@android:id/list"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
-    </Button>
+    </TextView>
 
 </android.support.constraint.ConstraintLayout>

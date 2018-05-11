@@ -6,11 +6,6 @@
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primaryDark</item>
         <item name="colorAccent">@color/accent</item>
-
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowActionBar">false</item>
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowContentOverlay">@null</item>
     </style>
 
     <style name="AppTheme.ToolBar" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -43,33 +38,62 @@
         <item name="android:tint">@color/primaryInverse</item>
     </style>
 
-    <style name="AppTheme.DeviceItem">
+    <style name="AppTheme.Item">
 
     </style>
 
-    <style name="AppTheme.DeviceItem.Container">
+    <style name="AppTheme.Item.Container">
         <item name="android:paddingStart">?android:attr/listPreferredItemPaddingStart</item>
         <item name="android:paddingEnd">?android:attr/listPreferredItemPaddingEnd</item>
         <item name="android:minHeight">?android:attr/listPreferredItemHeightSmall</item>
     </style>
 
-    <style name="AppTheme.DeviceItem.Name">
+    <style name="AppTheme.Item.Device">
+
+    </style>
+
+    <style name="AppTheme.Item.Device.Name">
         <item name="android:textAppearance">?android:attr/textAppearanceListItem</item>
     </style>
 
-    <style name="AppTheme.DeviceItem.Address">
+    <style name="AppTheme.Item.Device.Address">
         <item name="android:textAppearance">?android:attr/textAppearanceListItemSecondary</item>
     </style>
 
-    <style name="AppTheme.DeviceItem.Status">
-        <item name="android:textAppearance">@style/TextAppearance.DeviceItem.Status</item>
+    <style name="AppTheme.Item.Device.Status">
+        <item name="android:textAppearance">@style/TextAppearance.Item.Device.Status</item>
         <item name="android:gravity">center_vertical|center_horizontal</item>
         <item name="android:drawableLeft">@drawable/ic_connected_indicator</item>
         <item name="android:drawablePadding">2dp</item>
     </style>
 
-    <style name="TextAppearance.DeviceItem.Status" parent="TextAppearance.AppCompat.Small">
+    <style name="AppTheme.Item.Recording">
+
+    </style>
+
+    <style name="AppTheme.Item.Recording.Title">
+        <item name="android:textAppearance">?android:attr/textAppearanceListItem</item>
+    </style>
+
+    <style name="AppTheme.Item.Recording.Subtitle">
+        <item name="android:textAppearance">?android:attr/textAppearanceListItemSecondary</item>
+    </style>
+
+    <style name="AppTheme.Item.Recording.Date">
+        <item name="android:textAppearance">@style/TextAppearance.Item.Recording.Date</item>
+        <item name="android:gravity">center_vertical|right</item>
+    </style>
+
+    <style name="TextAppearance.Item.Device.Status" parent="TextAppearance.AppCompat.Small">
         <item name="android:textColor">@color/deviceStatus</item>
         <item name="android:textSize">4sp</item>
+    </style>
+
+    <style name="TextAppearance.Item.Recording.Date" parent="TextAppearance.AppCompat.Small">
+
+    </style>
+
+    <style name="AppTheme.Item.Empty">
+        <item name="android:gravity">center_vertical|center_horizontal</item>
     </style>
 </resources>

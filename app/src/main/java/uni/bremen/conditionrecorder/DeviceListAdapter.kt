@@ -3,76 +3,64 @@ package uni.bremen.conditionrecorder
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.graphics.PorterDuff
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.BaseAdapter
 import android.widget.TextView
+import androidx.recyclerview.selection.StorageStrategy
 import info.plux.pluxapi.Constants
 import java.util.*
 
 
-class DeviceListAdapter(val context:Context, val devices:MutableList<StatefulBluetoothDevice<*>>) : BaseAdapter() {
+class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDevice<*>> = LinkedList()) : GenericRecycleViewAdapter<DeviceListAdapter.StatefulBluetoothDevice<*>, String, DeviceListAdapter.DeviceViewHolder>(context, devices) {
 
-    class DeviceViewHolder(val name: TextView, val address: TextView, val state: TextView)
+    override val itemKeyProvider = DeviceKeyProvider()
 
-    fun find(device: BluetoothDevice) : StatefulBluetoothDevice<*>? {
-        return devices.find { statefulBluetoothDevice -> statefulBluetoothDevice.device == device }
-    }
+    override val itemKeyStorageStrategy = StorageStrategy.createStringStorage()
 
-    fun add(device: StatefulBluetoothDevice<*>) {
-        if (!devices.contains(device)) {
-            devices.add(device)
+    override fun getItemViewResourceId(viewType: Int): Int = R.layout.item_device
+
+    override fun onBindViewHolder(holder: DeviceViewHolder, item:StatefulBluetoothDevice<*>, position: Int) {
+        with(holder) {
+            name.text = item.device.name ?: "BITalino"
+            address.text = item.device.address
+
+            item.update(this, context)
         }
     }
 
-    fun update(viewHolder: DeviceViewHolder, statefulBluetoothDevice: StatefulBluetoothDevice<*>) {
-        with(viewHolder) {
-            name.text = statefulBluetoothDevice.device.name ?: "BITalino"
-            address.text = statefulBluetoothDevice.device.address
-
-            statefulBluetoothDevice.update(this, context)
-        }
+    fun find(device: BluetoothDevice) : DeviceListAdapter.StatefulBluetoothDevice<*>? {
+        return items.find { statefulBluetoothDevice -> statefulBluetoothDevice.device == device }
     }
 
-    fun clear() {
-        devices.clear()
+    override fun add(item: StatefulBluetoothDevice<*>) {
+        super.add(item)
+
+        item.position = items.size - 1
     }
 
-    override fun getCount(): Int = devices.size
-
-    override fun getItem(i: Int): StatefulBluetoothDevice<*> = devices[i]
-
-    override fun getItemId(i: Int): Long = i.toLong()
-
-    override fun getView(position: Int, existingView: View?, parent: ViewGroup?): View {
-        val view = existingView ?: LayoutInflater.from(context).inflate(R.layout.item_device, parent, false)
+    override fun createViewHolder(view:View):DeviceViewHolder {
         view.setPadding(0, 0, 0, 0)
 
-        val statefulBluetoothDevice = getItem(position)
-        statefulBluetoothDevice.position = position
-
-        update(getDeviceViewHolder(view), statefulBluetoothDevice)
-
-        return view
+        return DeviceViewHolder(view,
+                view.findViewById(android.R.id.text1) as TextView,
+                view.findViewById(android.R.id.text2) as TextView,
+                view.findViewById(R.id.text3) as TextView)
     }
 
-    override fun getItemViewType(position: Int): Int = getItem(position).type
+    override fun getItemViewType(position: Int): Int = items[position].type
 
-    private fun getDeviceViewHolder(view:View): DeviceViewHolder {
-        var deviceViewHolder = view.getTag(R.id.list_item_view_handler)
-        if (deviceViewHolder == null) {
-            deviceViewHolder = DeviceViewHolder(
-                    view.findViewById(android.R.id.text1) as TextView,
-                    view.findViewById(android.R.id.text2) as TextView,
-                    view.findViewById(R.id.deviceState) as TextView)
+    inner class DeviceKeyProvider : GenericItemKeyProvider<String>(0) {
 
-            view.setTag(R.id.list_item_view_handler, deviceViewHolder)
+        override fun getKey(position: Int): String = items[position].device.address
+
+        override fun getPosition(key: String): Int {
+            return items
+                    .find { item -> item.device.address == key }
+                    ?.let { item -> items.indexOf(item) } ?: -1
         }
-        return deviceViewHolder as DeviceViewHolder
+
     }
 
-
+    class DeviceViewHolder(view:View, val name: TextView, val address: TextView, val state: TextView) : GenericRecycleViewAdapter.GenericViewHolder<String>(view, GenericRecycleViewAdapter.GenericItemDetails("", -1))
 
     interface StatefulBluetoothDevice<S> {
         val device: BluetoothDevice

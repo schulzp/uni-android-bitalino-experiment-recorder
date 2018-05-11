@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.net.Uri
 import android.os.Bundle
 import android.support.design.widget.AppBarLayout
 import android.support.design.widget.FloatingActionButton
@@ -17,18 +16,13 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
-import android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-import android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-import android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-import android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
-import android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-import android.view.View.SYSTEM_UI_FLAG_IMMERSIVE
-
-
 
 
 class MainActivity : AppCompatActivity() {
+
+    private var mainFragment:Fragment? = null
 
     private var contentBackStackIdentifier:Int? = -1
 
@@ -37,10 +31,15 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        try {
+            RequiredFeatures.check(this)
+        } catch (e: RequiredFeatures.MissingFeatureException) {
+            Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
+        }
+
         Log.d(TAG, "started with ${intent.action} (${intent.type})")
 
         setContentView(R.layout.activity_main)
-        setSupportActionBar(toolbar)
 
         if (intent.action == Intent.ACTION_PICK && intent.type == INTENT_TYPE_DEVICE) {
             setContent(Content.DEVICES)
@@ -48,6 +47,8 @@ class MainActivity : AppCompatActivity() {
             supportActionBarDrawerToggle = ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close)
 
             navigationView.setNavigationItemSelectedListener { menuItem ->
+                Log.d(TAG, "navigation used: $menuItem")
+
                 // set item as selected to persist highlight
                 menuItem.isChecked = true
 
@@ -64,6 +65,7 @@ class MainActivity : AppCompatActivity() {
 
             setContent(Content.RECORDINGS)
         }
+
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
@@ -141,6 +143,8 @@ class MainActivity : AppCompatActivity() {
 
         fragment.arguments = intent.extras
 
+        mainFragment = fragment
+
         contentBackStackIdentifier = supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.main_fragment, fragment, tag)
@@ -161,63 +165,24 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private var fullscreen: Boolean = false
-
     internal fun setFullScreen(enabled: Boolean) {
-        this.fullscreen = enabled
-        val flags = if (enabled)
-            (View.SYSTEM_UI_FLAG_IMMERSIVE
-                // Set the content to appear under the system bars so that the
-                // content doesn't resize when the system bars hide and show.
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                // Hide the nav bar and status bar
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN)
-        else
-            (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
-
-
         val appBarLayout = toolbar.parent as AppBarLayout
+
         if (enabled) {
+            setSupportActionBar(null)
             appBarLayout.setExpanded(false, true)
             appBarLayout.visibility = View.GONE
         } else {
             appBarLayout.visibility = View.VISIBLE
             appBarLayout.setExpanded(true, true)
-        }
-
-        window.decorView.setOnSystemUiVisibilityChangeListener(View.OnSystemUiVisibilityChangeListener { visibility ->
-            // Note that system bars will only be "visible" if none of the
-            // LOW_PROFILE, HIDE_NAVIGATION, or FULLSCREEN flags are set.
-            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
-                // TODO: The system bars are visible. Make any desired
-                // adjustments to your UI, such as showing the action bar or
-                // other navigational controls.
-            } else {
-                // TODO: The system bars are NOT visible. Make any desired
-                // adjustments to your UI, such as hiding the action bar or
-                // other navigational controls.
-            }
-
-            main_fragment.invalidate()
-        })
-        window.decorView.systemUiVisibility = flags
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-
-        if (hasFocus) {
-            setFullScreen(fullscreen)
+            setSupportActionBar(toolbar)
         }
     }
 
     override fun onBackPressed() {
-        if (supportFragmentManager.backStackEntryCount > 0) {
+        Log.d(TAG, "back pressed ${supportFragmentManager.backStackEntryCount}")
+
+        if (supportFragmentManager.backStackEntryCount > 1) {
             supportFragmentManager.popBackStack()
         } else {
             super.onBackPressed()
@@ -229,13 +194,17 @@ class MainActivity : AppCompatActivity() {
         const val TAG = "MainActivity"
 
         fun createPickDeviceIntent(context: Context):Intent {
-            val intent = Intent(Intent.ACTION_PICK, URI_DEVICES, context, MainActivity::class.java)
+            val intent = Intent(Intent.ACTION_PICK, Content.DEVICES.builder().build(), context, MainActivity::class.java)
             intent.type = INTENT_TYPE_DEVICE
             return intent
         }
 
         fun createViewDeviceIntent(context: Context, device:BluetoothDevice?):Intent {
-            val intent = Intent(Intent.ACTION_VIEW, URI_DEVICE, context, MainActivity::class.java)
+            val builder = Content.DEVICES.builder()
+            if (device != null) {
+                builder.appendEncodedPath(device.address)
+            }
+            val intent = Intent(Intent.ACTION_VIEW, builder.build(), context, MainActivity::class.java)
             intent.type = INTENT_TYPE_DEVICE
             if (device != null) {
                 intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device)

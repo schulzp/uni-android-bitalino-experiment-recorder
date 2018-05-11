@@ -33,8 +33,12 @@ const val INTENT_REQUEST_PICK_DEVICE = 0
 
 const val INTENT_TYPE_DEVICE = "device"
 
-val URI_DEVICES:Uri = Uri.parse("content://devices")
-val URI_DEVICE:Uri = Uri.parse("content://device")
+const val URI_SCHEME = "content"
+const val URI_AUTHORITY = "condition-recorder"
+
+fun uri():Uri.Builder {
+    return Uri.Builder().scheme(URI_SCHEME).authority(URI_AUTHORITY)
+}
 
 val VIDEO_PERMISSIONS = arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
 val COARSE_LOCATION_PERMISSIONS = arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION)

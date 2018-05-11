@@ -5,22 +5,34 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.EXTRA_DEVICE
 import android.content.Intent
 import android.os.Bundle
-import android.support.v4.app.ListFragment
+import android.support.v4.app.Fragment
+import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
 import info.plux.pluxapi.Constants
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.fragment_recorder_device_list.*
 import java.util.*
 
 
-class RecorderDeviceListFragment : ListFragment(), AdapterView.OnItemClickListener {
+class RecorderDeviceListFragment : Fragment() {
 
     private lateinit var adapter:DeviceListAdapter
 
     private lateinit var recorderServiceConnection:RecorderService.Connection
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
+            : View? = inflater.inflate(R.layout.fragment_recorder_device_list, container, false)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        adapter = DeviceListAdapter(activity!!, LinkedList())
+        list.adapter = adapter
+        list.layoutManager = LinearLayoutManager(activity!!)
+        list.setHasFixedSize(true)
+    }
 
     override fun onResume() {
         super.onResume()
@@ -40,6 +52,12 @@ class RecorderDeviceListFragment : ListFragment(), AdapterView.OnItemClickListen
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+
+        recorderServiceConnection.close(context!!)
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
@@ -51,26 +69,6 @@ class RecorderDeviceListFragment : ListFragment(), AdapterView.OnItemClickListen
                 }
             }
         }
-    }
-
-    override fun onPause() {
-        super.onPause()
-
-        recorderServiceConnection.close(context!!)
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
-            : View? = inflater.inflate(R.layout.fragment_recorder_device_list, container, false)
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-
-        adapter = DeviceListAdapter(activity!!, LinkedList())
-        listView.adapter = adapter
-    }
-
-    override fun onItemClick(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
-
     }
 
     private fun addDevice(device: BluetoothDevice) {
@@ -86,8 +84,9 @@ class RecorderDeviceListFragment : ListFragment(), AdapterView.OnItemClickListen
                     statefulBluetoothDevice.state = state as? Constants.States
                 }
             }
-            val view = listView.getChildAt(statefulBluetoothDevice.position - listView.firstVisiblePosition)
-            listView.adapter.getView(statefulBluetoothDevice.position, view, listView)
+
+            var viewHolder = list.findViewHolderForItemId(statefulBluetoothDevice.position.toLong()) as DeviceListAdapter.DeviceViewHolder
+            adapter.onBindViewHolder(viewHolder, statefulBluetoothDevice, statefulBluetoothDevice.position)
         }
     }
 
