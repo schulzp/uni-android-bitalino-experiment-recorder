@@ -18,7 +18,7 @@ import info.plux.pluxapi.BTHDeviceScan
 import info.plux.pluxapi.Constants
 import kotlinx.android.synthetic.main.fragment_list.*
 
-class ListDevicesFragment : Fragment() {
+class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
     private lateinit var listAdapter: DeviceListAdapter
     private lateinit var bluetoothAdapterAdapter: BluetoothAdapter
@@ -87,16 +87,10 @@ class ListDevicesFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
+        withObserver()?.onContentCreated(this)
+
         with(activity as MainActivity) {
-            title = resources.getString(R.string.devices)
-            setFullScreen(false)
-            setDrawerEnabled(false)
-
-            updateDrawerMenu(R.id.contentDevices)
-
-            with(getFab()) {
-                hide()
-            }
+            getFab().hide()
         }
     }
 
@@ -128,6 +122,8 @@ class ListDevicesFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+
+        withObserver()?.onContentResumed(this)
 
         context?.registerReceiver(scanDevicesUpdateReceiver, IntentFilter(Constants.ACTION_MESSAGE_SCAN))
         isScanDevicesUpdateReceiverRegistered = true

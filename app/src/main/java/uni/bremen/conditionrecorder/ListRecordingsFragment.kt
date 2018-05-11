@@ -11,9 +11,9 @@ import kotlinx.android.synthetic.main.fragment_list.*
 
 
 /**
- * A placeholder fragment containing a simple view.
+ * List of recordings
  */
-class ListRecordingsFragment : Fragment(), GenericRecycleViewAdapter.OnItemSelectedListener<Recording> {
+class ListRecordingsFragment : ContentFragment(Content.RECORDINGS, R.string.recordings), GenericRecycleViewAdapter.OnItemSelectedListener<Recording> {
 
     private lateinit var adapter: RecordingAdapter
 
@@ -23,16 +23,11 @@ class ListRecordingsFragment : Fragment(), GenericRecycleViewAdapter.OnItemSelec
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
+        withObserver()?.onContentCreated(this)
+
         with(activity as MainActivity) {
             with(getFab()) {
-                title = resources.getString(R.string.recordings)
-                setFullScreen(false)
-                setDrawerEnabled(true)
-                updateDrawerMenu(R.id.contentRecordings)
-
-                setOnClickListener { _ ->
-                    setContent(Content.RECORDER)
-                }
+                setOnClickListener { _ -> setContent(Content.RECORDER) }
                 show()
             }
         }
@@ -45,9 +40,13 @@ class ListRecordingsFragment : Fragment(), GenericRecycleViewAdapter.OnItemSelec
             adapter.add(Recording("Subject $i", "XYZ"))
         }
 
-        Log.d(TAG, "items: ${adapter.itemCount}")
-
         adapter.notifyDataSetChanged()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        withObserver()?.onContentResumed(this)
     }
 
     private fun setupList() {
@@ -67,8 +66,6 @@ class ListRecordingsFragment : Fragment(), GenericRecycleViewAdapter.OnItemSelec
         const val SELECTION_ID = "recordings-selection"
 
         val TAG = Content.RECORDINGS.name
-
-        fun newInstance():ListRecordingsFragment = ListRecordingsFragment()
 
     }
 }

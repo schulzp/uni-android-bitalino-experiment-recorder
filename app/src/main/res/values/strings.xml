@@ -15,4 +15,5 @@
     <string name="no_items">No items available</string>
     <string name="bluetooth_not_supported">Bluetooth is not supported</string>
     <string name="bluetooth_le_not_supported">Bluetooth LE is not supported</string>
+    <string name="device">Device</string>
 </resources>

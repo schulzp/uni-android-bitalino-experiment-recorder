@@ -9,7 +9,7 @@ import android.widget.Toast
 import io.reactivex.android.schedulers.AndroidSchedulers
 
 
-class RecorderFragment : FullscreenFragment() {
+class RecorderFragment : ContentFragment(Content.RECORDER, R.string.recorder), Fullscreen {
 
     private lateinit var recorderServiceConnection:RecorderService.Connection
 
@@ -22,10 +22,16 @@ class RecorderFragment : FullscreenFragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        withObserver()?.onContentResumed(this)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
 
-        recorderServiceConnection?.close(activity!!)
+        recorderServiceConnection.close(activity!!)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
@@ -45,17 +51,11 @@ class RecorderFragment : FullscreenFragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
+        withObserver()?.onContentCreated(this)
+
         with(activity as MainActivity) {
-            title = resources.getString(R.string.recorder)
-            setFullScreen(true)
-            setDrawerEnabled(false)
-            updateDrawerMenu(-1)
-
-            with(getFab()) {
-                hide()
-            }
+            getFab().hide()
         }
-
     }
 
     private fun showToast(message : String) = Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()

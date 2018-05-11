@@ -22,13 +22,12 @@ import info.plux.pluxapi.Constants.*
 import info.plux.pluxapi.bitalino.*
 import info.plux.pluxapi.bitalino.bth.OnBITalinoDataAvailable
 
-class DeviceFragment : Fragment(), OnBITalinoDataAvailable, View.OnClickListener {
+class DeviceFragment : ContentFragment(Content.DEVICE, R.string.device), OnBITalinoDataAvailable, View.OnClickListener {
 
     private var bluetoothDevice: BluetoothDevice? = null
 
     private var bitalino: BITalinoCommunication? = null
     private var isBITalino2 = false
-
 
     private var handler: Handler? = null
 
@@ -158,11 +157,23 @@ class DeviceFragment : Fragment(), OnBITalinoDataAvailable, View.OnClickListener
         setUIElements()
     }
 
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+
+        withObserver()?.onContentCreated(this)
+
+        with(activity as MainActivity) {
+            getFab().hide()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
 
         activity?.registerReceiver(updateReceiver, makeUpdateIntentFilter())
         isUpdateReceiverRegistered = true
+
+        withObserver()?.onContentResumed(this)
     }
 
     override fun onDestroy() {
