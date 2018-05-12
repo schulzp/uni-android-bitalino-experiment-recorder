@@ -7,18 +7,13 @@ import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.MotionEvent
+import android.view.View
 
 class RecycleViewHelper {
 
-    class RippleOnItemTouchListener : RecyclerView.OnItemTouchListener {
+    class RippleOnItemTouchListener : View.OnTouchListener {
 
-        override fun onInterceptTouchEvent(list: RecyclerView, e: MotionEvent): Boolean = true
-
-        override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) { }
-
-        override fun onTouchEvent(list: RecyclerView, e: MotionEvent) {
-            val child = list.findChildViewUnder(e.x, e.y) ?: return
-
+        override fun onTouch(child: View, e: MotionEvent): Boolean {
             val down = e.action == MotionEvent.ACTION_DOWN || e.action == MotionEvent.ACTION_MOVE
             val up = e.action == MotionEvent.ACTION_UP || e.action == MotionEvent.ACTION_CANCEL
 
@@ -34,9 +29,10 @@ class RecycleViewHelper {
                 Log.d("RIPPLE", "start")
                 child.isPressed = true
                 child.setTag(R.id.ripple_started, started)
-                child.background?.setHotspot(e.x - child.x, e.y - child.y)
+                child.background?.setHotspot(e.x, e.y)
             }
 
+            return false
         }
 
     }
@@ -46,7 +42,6 @@ class RecycleViewHelper {
         const val RIPPLE_DURATION = 1000L
 
         fun verticalList(list: RecyclerView, context: Context): RecyclerView {
-            list.addOnItemTouchListener(RippleOnItemTouchListener())
             list.layoutManager = LinearLayoutManager(context)
             list.itemAnimator = DefaultItemAnimator()
             list.addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))

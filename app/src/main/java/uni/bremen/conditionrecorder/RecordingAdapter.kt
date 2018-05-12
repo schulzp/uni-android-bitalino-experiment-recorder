@@ -28,18 +28,6 @@ class RecordingAdapter(context: Context)
 
             itemDetails.position = position
             itemDetails.selectionKey = item.id
-
-            itemView.setOnTouchListener { view, motionEvent ->
-                Log.d("ITEM", "touched ($view), ($motionEvent)")
-                true
-            }
-
-            itemView.setOnClickListener {
-                Log.d("ITEM", "clicked ($it)")
-                true
-            }
-
-
         }
     }
 

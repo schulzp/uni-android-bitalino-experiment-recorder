@@ -2,7 +2,6 @@ package uni.bremen.conditionrecorder
 
 import android.content.Context
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -14,6 +13,8 @@ import androidx.recyclerview.selection.StorageStrategy
 
 
 abstract class GenericRecycleViewAdapter<I, K, V: GenericRecycleViewAdapter.GenericViewHolder<K>>(val context: Context, internal val items: MutableList<I>) : RecyclerView.Adapter<V>() {
+
+    var onItemClickListener:OnItemClickListener<I>? = null
 
     abstract val itemKeyStorageStrategy:StorageStrategy<K>
 
@@ -39,7 +40,7 @@ abstract class GenericRecycleViewAdapter<I, K, V: GenericRecycleViewAdapter.Gene
 
     }
 
-    fun createActivationListener(delegate:OnItemSelectedListener<I, K>)
+    fun createActivationListener(delegate:OnItemClickListener<I>)
             : GenericOnItemActivatedListener = GenericOnItemActivatedListener(delegate)
 
     fun createItemDetailsLookup(view:RecyclerView) : GenericItemDetailsLookup = GenericItemDetailsLookup(view)
@@ -55,13 +56,26 @@ abstract class GenericRecycleViewAdapter<I, K, V: GenericRecycleViewAdapter.Gene
     abstract fun getItemViewResourceId(viewType: Int): Int
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): V {
-        val view = LayoutInflater.from(context).inflate(getItemViewResourceId(viewType), parent, false)
+        val view = createView(viewType, parent).also { view -> prepareView(view) }
         return createViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: V, position: Int) {
         holder.itemView.setTag(R.id.item_value, items[position])
         onBindViewHolder(holder, items[position], position)
+    }
+
+    fun prepareView(view: View) {
+        view.setOnTouchListener(RecycleViewHelper.RippleOnItemTouchListener())
+        view.setOnClickListener { view ->
+            this.onItemClickListener?.onItemSelected(view.getTag(R.id.item_value) as I) ?: false
+        }
+    }
+
+    fun createView(viewType: Int, parent: ViewGroup): View {
+        return LayoutInflater
+                .from(context)
+                .inflate(getItemViewResourceId(viewType), parent, false)
     }
 
     abstract class GenericViewHolder<K>(view:View, val itemDetails: GenericItemDetails<K>) : RecyclerView.ViewHolder(view)
@@ -93,16 +107,16 @@ abstract class GenericRecycleViewAdapter<I, K, V: GenericRecycleViewAdapter.Gene
 
     }
 
-    interface OnItemSelectedListener<I, K> {
+    interface OnItemClickListener<I> {
 
-        fun onItemSelected(item: I, details: ItemDetailsLookup.ItemDetails<K>, motionEvent: MotionEvent):Boolean
+        fun onItemSelected(item: I):Boolean
 
     }
 
-    inner class GenericOnItemActivatedListener(private val delegate: OnItemSelectedListener<I, K>) : OnItemActivatedListener<K> {
+    inner class GenericOnItemActivatedListener(private val delegate: OnItemClickListener<I>) : OnItemActivatedListener<K> {
 
         override fun onItemActivated(details: ItemDetailsLookup.ItemDetails<K>, e: MotionEvent): Boolean {
-            return delegate.onItemSelected(items[details.position], details, e)
+            return delegate.onItemSelected(items[details.position])
         }
 
     }

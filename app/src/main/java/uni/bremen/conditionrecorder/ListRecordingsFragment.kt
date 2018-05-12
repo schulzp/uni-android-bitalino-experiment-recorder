@@ -1,21 +1,17 @@
 package uni.bremen.conditionrecorder
 
-import android.graphics.drawable.RippleDrawable
 import android.os.Bundle
-import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import androidx.recyclerview.selection.*
 import kotlinx.android.synthetic.main.fragment_list.*
 
 
 /**
  * List of recordings
  */
-class ListRecordingsFragment : ContentFragment(Content.RECORDINGS, R.string.recordings), GenericRecycleViewAdapter.OnItemSelectedListener<Recording, Long> {
+class ListRecordingsFragment : ContentFragment(Content.RECORDINGS, R.string.recordings), GenericRecycleViewAdapter.OnItemClickListener<Recording> {
 
     private lateinit var adapter: RecordingAdapter
 
@@ -52,14 +48,11 @@ class ListRecordingsFragment : ContentFragment(Content.RECORDINGS, R.string.reco
 
     private fun setupList() {
         adapter = RecordingAdapter(activity!!)
-        adapter.createSelectionTracker(list, SELECTION_ID)
-                .withOnItemActivatedListener(adapter.createActivationListener(this))
-                .build()
-
+        adapter.onItemClickListener = this
         RecycleViewHelper.verticalList(list, activity!!).adapter = adapter
     }
 
-    override fun onItemSelected(item: Recording, details: ItemDetailsLookup.ItemDetails<Long>, motionEvent: MotionEvent): Boolean {
+    override fun onItemSelected(item: Recording): Boolean {
         Log.d(TAG, "got activated")
 
         return true

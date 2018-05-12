@@ -12,7 +12,6 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.view.*
-import androidx.recyclerview.selection.ItemDetailsLookup
 import info.plux.pluxapi.BTHDeviceScan
 import info.plux.pluxapi.Constants
 import kotlinx.android.synthetic.main.fragment_list.*
@@ -20,7 +19,7 @@ import kotlinx.android.synthetic.main.fragment_list.*
 class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
     private lateinit var listAdapter: DeviceListAdapter
-    private lateinit var bluetoothAdapterAdapter: BluetoothAdapter
+    private lateinit var bluetoothAdapter: BluetoothAdapter
 
     private var isScanning: Boolean = false
     private val handler = Handler()
@@ -28,9 +27,9 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
     private var bthDeviceScan: BTHDeviceScan? = null
     private var isScanDevicesUpdateReceiverRegistered = false
 
-    private val onItemSelectedListener = object:GenericRecycleViewAdapter.OnItemSelectedListener<DeviceListAdapter.StatefulBluetoothDevice<*>, String> {
+    private val onItemClickListener = object:GenericRecycleViewAdapter.OnItemClickListener<DeviceListAdapter.StatefulBluetoothDevice<*>> {
 
-        override fun onItemSelected(item: DeviceListAdapter.StatefulBluetoothDevice<*>, details: ItemDetailsLookup.ItemDetails<String>, motionEvent: MotionEvent): Boolean {
+        override fun onItemSelected(item: DeviceListAdapter.StatefulBluetoothDevice<*>): Boolean {
             if (isScanning) {
                 bthDeviceScan?.stopScan()
                 isScanning = false
@@ -47,7 +46,6 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
             return true
         }
-
     }
 
     private val scanDevicesUpdateReceiver = object : BroadcastReceiver() {
@@ -72,7 +70,7 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
         val bluetoothManager = context?.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
 
-        bluetoothAdapterAdapter = bluetoothManager?.adapter
+        bluetoothAdapter = bluetoothManager?.adapter
                 ?: throw RequiredFeatures.MissingFeatureException(PackageManager.FEATURE_BLUETOOTH)
 
         requestLocationPermissions()
@@ -119,6 +117,8 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
         return true
     }
 
+
+
     override fun onResume() {
         super.onResume()
 
@@ -129,8 +129,8 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
         // Ensures Bluetooth is enabled on the device.  If Bluetooth is not currently enabled,
         // fire an intent to display a dialog asking the user to grant permission to enable it.
-        if (!bluetoothAdapterAdapter.isEnabled) {
-            if (!bluetoothAdapterAdapter.isEnabled) {
+        if (!bluetoothAdapter.isEnabled) {
+            if (!bluetoothAdapter.isEnabled) {
                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
             }
@@ -138,16 +138,20 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
         setupList()
 
-        scanDevice(true)
+        for (device in bluetoothAdapter.bondedDevices) {
+            listAdapter.add(DeviceListAdapter.BITalinoBluetoothDevice(device))
+        }
+
+        //scanDevice(true)
     }
 
     private fun setupList() {
         listAdapter = DeviceListAdapter(activity!!)
-        listAdapter.createSelectionTracker(list, SELECTION_ID)
-                .withOnItemActivatedListener(listAdapter.createActivationListener(onItemSelectedListener))
-                .build()
+        listAdapter.onItemClickListener = onItemClickListener
 
         RecycleViewHelper.verticalList(list, activity!!).adapter = listAdapter
+
+        //listAdapter.createSelectionTracker(list, SELECTION_ID).build()
     }
 
     override fun onPause() {

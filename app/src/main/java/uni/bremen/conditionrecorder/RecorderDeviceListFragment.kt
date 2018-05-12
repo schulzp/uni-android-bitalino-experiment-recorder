@@ -85,8 +85,11 @@ class RecorderDeviceListFragment : Fragment() {
                 }
             }
 
-            var viewHolder = list.findViewHolderForItemId(statefulBluetoothDevice.position.toLong()) as DeviceListAdapter.DeviceViewHolder
-            adapter.onBindViewHolder(viewHolder, statefulBluetoothDevice, statefulBluetoothDevice.position)
+            val position = adapter.indexOf(statefulBluetoothDevice)
+
+            list.findViewHolderForAdapterPosition(position)
+                    ?.let { it as DeviceListAdapter.DeviceViewHolder }
+                    ?.let { adapter.onBindViewHolder(it, statefulBluetoothDevice, position) }
         }
     }
 

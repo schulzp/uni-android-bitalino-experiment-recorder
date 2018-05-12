@@ -31,6 +31,10 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
         }
     }
 
+    fun indexOf(device: StatefulBluetoothDevice<*>):Int {
+        return items.indexOf(device)
+    }
+
     fun find(device: BluetoothDevice) : DeviceListAdapter.StatefulBluetoothDevice<*>? {
         return items.find { statefulBluetoothDevice -> statefulBluetoothDevice.device == device }
     }

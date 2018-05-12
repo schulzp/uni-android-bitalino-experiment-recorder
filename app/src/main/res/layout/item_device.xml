@@ -5,8 +5,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/AppTheme.Item.Container"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="?android:attr/selectableItemBackground">
+    android:layout_height="wrap_content">
 
     <TextView android:text="Device Name"
         style="@style/AppTheme.Item.Device.Name"

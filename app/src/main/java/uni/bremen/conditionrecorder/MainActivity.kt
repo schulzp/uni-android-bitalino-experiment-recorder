@@ -40,14 +40,18 @@ class MainActivity : AppCompatActivity(), ContentFragmentLifecycle {
 
         checkRequiredFeatures()
 
-        registerFullscreenListener()
-
         setContent()
 
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onResume() {
+        super.onResume()
+
+        registerFullscreenListener()
+    }
+
+    override fun onPause() {
+        super.onPause()
 
         unregisterFullscreenListener()
     }
@@ -185,6 +189,8 @@ class MainActivity : AppCompatActivity(), ContentFragmentLifecycle {
 
         if (intent.action == Intent.ACTION_PICK && intent.type == INTENT_TYPE_DEVICE) {
             setContent(Content.DEVICES)
+        } else if (intent.action == Intent.ACTION_VIEW && intent.type == INTENT_TYPE_DEVICE) {
+            setContent(Content.DEVICE)
         } else {
             supportActionBarDrawerToggle = ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close)
 
@@ -229,11 +235,14 @@ class MainActivity : AppCompatActivity(), ContentFragmentLifecycle {
 
         fragment.arguments = intent.extras
 
-        contentBackStackIdentifier = supportFragmentManager
+        val fragmentTransaction = supportFragmentManager
                 .beginTransaction()
                 .replace(R.id.main_fragment, fragment, tag)
-                .addToBackStack(tag)
-                .commit()
+
+        // Do not add the first element to the back stack
+        if (main_fragment.childCount != 0) fragmentTransaction.addToBackStack(tag)
+
+        contentBackStackIdentifier = fragmentTransaction.commit()
     }
 
     private fun setDrawerEnabled(value:Boolean) {
