@@ -1,10 +1,6 @@
 package uni.bremen.conditionrecorder
 
-import android.bluetooth.BluetoothManager
-import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,6 +15,8 @@ class RecorderFragment : ContentFragment(Content.RECORDER, R.string.recorder), F
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         recorderServiceConnection = RecorderService.bind(activity!!) { _, service ->
+            service.bus.post(RecorderBus.CreateSession())
+
             service.bus.recordingStopped.subscribeOn(AndroidSchedulers.mainThread()).subscribe { event ->
                 showToast(event.videoRecordingStopped.path)
             }
@@ -34,6 +32,7 @@ class RecorderFragment : ContentFragment(Content.RECORDER, R.string.recorder), F
     override fun onDestroy() {
         super.onDestroy()
 
+        recorderServiceConnection.whenConnected { _, service -> service.bus.post(RecorderBus.DestroySession()) }
         recorderServiceConnection.close(activity!!)
     }
 

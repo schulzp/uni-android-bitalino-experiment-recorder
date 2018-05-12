@@ -26,7 +26,7 @@ class RecycleViewHelper {
                 child.isPressed = false
                 child.setTag(R.id.ripple_started, 0L)
             } else if (delta > RIPPLE_DURATION && down && !up) {
-                Log.d("RIPPLE", "start")
+                Log.d("RIPPLE", "connect")
                 child.isPressed = true
                 child.setTag(R.id.ripple_started, started)
                 child.background?.setHotspot(e.x, e.y)

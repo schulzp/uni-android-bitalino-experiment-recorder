@@ -199,7 +199,7 @@ class RecorderVideoFragment : Fragment(),
 
         // When the screen is turned off and turned back on, the SurfaceTexture is already
         // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
-        // a camera and start preview from here (otherwise, we wait until the surface is ready in
+        // a camera and connect preview from here (otherwise, we wait until the surface is ready in
         // the SurfaceTextureListener).
         if (textureView.isAvailable) {
             openCamera(textureView.width, textureView.height)
@@ -507,7 +507,7 @@ class RecorderVideoFragment : Fragment(),
             }
 
             // Start a capture session
-            // Once the session starts, we can update the UI and start recording
+            // Once the session starts, we can update the UI and connect recording
             cameraDevice?.createCaptureSession(surfaces,
                     object : CameraCaptureSession.StateCallback() {
 

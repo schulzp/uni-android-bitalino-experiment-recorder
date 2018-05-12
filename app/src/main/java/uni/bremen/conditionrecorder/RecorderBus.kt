@@ -46,6 +46,9 @@ class RecorderBus : GenericBus<GenericBus.Instance, RecorderBus.Event, RecorderB
     class VideoRecordingStarted : Event
     class VideoRecordingStopped(val path:String) : Event
 
+    class CreateSession : Command
+    class DestroySession : Command
+
     class StartRecording : Command
     class StopRecording : Command
 

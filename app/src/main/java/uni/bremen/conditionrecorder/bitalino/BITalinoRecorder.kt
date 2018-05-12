@@ -15,17 +15,15 @@ import uni.bremen.conditionrecorder.RecorderBus
 import uni.bremen.conditionrecorder.RecorderDeviceFragment
 import uni.bremen.conditionrecorder.RecorderService
 
-class BITalinoRecordingSession(val service: RecorderService, val bluetoothDevice: BluetoothDevice) {
+class BITalinoRecorder(val service: RecorderService, val bluetoothDevice: BluetoothDevice) {
+
+    var writer: BITalinoFrameWriter? = null
 
     private var bitalino: BITalinoCommunication? = null
 
-    private val dataReceiver: OnBITalinoDataAvailable = object : OnBITalinoDataAvailable {
+    private var registerReceiverIntent: Intent? = null
 
-        override fun onBITalinoDataAvailable(bitalinoFrame: BITalinoFrame) {
-            Log.d(RecorderService.TAG, "frame available: $bitalinoFrame")
-        }
-
-    }
+    private val dataReceiver: OnBITalinoDataAvailable = OnBITalinoDataAvailable { writer?.write(it) }
 
     private val updateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -87,9 +85,7 @@ class BITalinoRecordingSession(val service: RecorderService, val bluetoothDevice
         }
     }
 
-    private var registerReceiverIntent: Intent? = null
-
-    fun start() {
+    fun connect() {
         var communication = Communication.getById(bluetoothDevice.type)
 
         Log.d(RecorderService.TAG, "communication: ${communication.name}")
@@ -102,10 +98,18 @@ class BITalinoRecordingSession(val service: RecorderService, val bluetoothDevice
 
         registerReceiverIntent = service.registerReceiver(updateReceiver, makeUpdateIntentFilter())
 
-        bitalino!!.connect(bluetoothDevice.address)
+        bitalino?.connect(bluetoothDevice.address)
     }
 
-    fun close() {
+    fun start() {
+        bitalino?.start(intArrayOf(0, 1, 2, 3, 4, 5), 1)
+    }
+
+    fun stop() {
+        bitalino?.stop()
+    }
+
+    fun disconnect() {
         if (registerReceiverIntent != null) {
             service.unregisterReceiver(updateReceiver)
             registerReceiverIntent = null
@@ -131,7 +135,7 @@ class BITalinoRecordingSession(val service: RecorderService, val bluetoothDevice
 
     companion object {
 
-        const val TAG = "BITalinoRecordingSession"
+        const val TAG = "BITalinoRecorder"
 
     }
 
