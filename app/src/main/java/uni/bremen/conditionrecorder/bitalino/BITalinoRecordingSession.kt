@@ -87,6 +87,8 @@ class BITalinoRecordingSession(val service: RecorderService, val bluetoothDevice
         }
     }
 
+    private var registerReceiverIntent: Intent? = null
+
     fun start() {
         var communication = Communication.getById(bluetoothDevice.type)
 
@@ -98,19 +100,22 @@ class BITalinoRecordingSession(val service: RecorderService, val bluetoothDevice
 
         bitalino = BITalinoCommunicationFactory().getCommunication(communication, service, dataReceiver)
 
-        service.registerReceiver(updateReceiver, makeUpdateIntentFilter())
+        registerReceiverIntent = service.registerReceiver(updateReceiver, makeUpdateIntentFilter())
 
         bitalino!!.connect(bluetoothDevice.address)
     }
 
     fun close() {
-        service.unregisterReceiver(updateReceiver)
+        if (registerReceiverIntent != null) {
+            service.unregisterReceiver(updateReceiver)
+            registerReceiverIntent = null
+        }
 
         try {
             bitalino?.closeReceivers()
             bitalino?.disconnect()
         } catch (e: BITalinoException) {
-            Log.e(RecorderService.TAG, "failed to close/disconnect from bitalino", e)
+            Log.e(TAG, "failed to close/disconnect from BITalino", e)
         }
     }
 
@@ -122,6 +127,12 @@ class BITalinoRecordingSession(val service: RecorderService, val bluetoothDevice
         intentFilter.addAction(Constants.ACTION_DEVICE_READY)
         intentFilter.addAction(Constants.ACTION_COMMAND_REPLY)
         return intentFilter
+    }
+
+    companion object {
+
+        const val TAG = "BITalinoRecordingSession"
+
     }
 
 }

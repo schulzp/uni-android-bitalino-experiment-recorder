@@ -150,8 +150,6 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
         listAdapter.onItemClickListener = onItemClickListener
 
         RecycleViewHelper.verticalList(list, activity!!).adapter = listAdapter
-
-        //listAdapter.createSelectionTracker(list, SELECTION_ID).build()
     }
 
     override fun onPause() {

@@ -3,17 +3,19 @@ package uni.bremen.conditionrecorder
 import android.app.Activity
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.EXTRA_DEVICE
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
 import android.support.v4.app.Fragment
-import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import info.plux.pluxapi.Constants
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.fragment_recorder_device_list.*
-import java.util.*
 
 
 class RecorderDeviceListFragment : Fragment() {
@@ -28,10 +30,7 @@ class RecorderDeviceListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        adapter = DeviceListAdapter(activity!!, LinkedList())
-        list.adapter = adapter
-        list.layoutManager = LinearLayoutManager(activity!!)
-        list.setHasFixedSize(true)
+        setupList()
     }
 
     override fun onResume() {
@@ -40,11 +39,14 @@ class RecorderDeviceListFragment : Fragment() {
         recorderServiceConnection = RecorderService.bind(context!!) { _, service ->
             val scheduler = AndroidSchedulers.mainThread()
 
-            listOf(
-                    service.bus.deviceSelected.subscribeOn(scheduler)
-                            .subscribe { selected -> addDevice(selected.device) },
-                    service.bus.deviceStateChange.subscribeOn(scheduler)
-                            .subscribe { change -> updateDevice(change.device, change.state) })
+            val selected = service.bus.deviceSelected.subscribeOn(scheduler)
+                    .subscribe { selected -> addDevice(selected.device) }
+            val updated = service.bus.deviceStateChange.subscribeOn(scheduler)
+                    .subscribe { change -> updateDevice(change.device, change.state) }
+
+            Handler().postDelayed({ addDefaultDevices(service) }, 100)
+
+            listOf(selected, updated)
         }
 
         empty.setOnClickListener {
@@ -91,6 +93,21 @@ class RecorderDeviceListFragment : Fragment() {
                     ?.let { it as DeviceListAdapter.DeviceViewHolder }
                     ?.let { adapter.onBindViewHolder(it, statefulBluetoothDevice, position) }
         }
+    }
+
+    private fun setupList() {
+        adapter = DeviceListAdapter(activity!!)
+        RecycleViewHelper.verticalList(list, activity!!).adapter = adapter
+    }
+
+    private fun addDefaultDevices(service: RecorderService) {
+        val bluetoothManager = service.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+        val bluetoothAdapter = bluetoothManager?.adapter
+                ?: throw RequiredFeatures.MissingFeatureException(PackageManager.FEATURE_BLUETOOTH)
+
+        bluetoothAdapter.bondedDevices
+                .filter { it.address == "20:16:02:14:75:37" }
+                .forEach { service.bus.post(RecorderBus.SelectedDevice(it)) }
     }
 
     companion object {

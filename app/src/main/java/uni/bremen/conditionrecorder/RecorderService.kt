@@ -9,6 +9,7 @@ import android.content.ServiceConnection
 import android.os.HandlerThread
 import android.os.IBinder
 import android.util.Log
+import io.reactivex.Scheduler
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import uni.bremen.conditionrecorder.bitalino.BITalinoRecordingSession
@@ -38,8 +39,7 @@ class RecorderService : Service() {
 
         bitalinoRecordingSession?.close()
 
-        disposables.values.forEach { it.dispose() }
-        disposables.clear()
+        unsubscribe()
 
         stopThread()
     }
@@ -79,6 +79,27 @@ class RecorderService : Service() {
         }
     }
 
+    private fun subscribe(scheduler: Scheduler?) {
+        disposables["commands"] = bus.commandSubject.subscribeOn(scheduler)
+                .subscribe {
+                    when (it) {
+                        is RecorderBus.StartRecording -> startRecording()
+                        is RecorderBus.StopRecording -> stopRecording()
+                    }
+                }
+
+        disposables["devices"] = bus.eventSubject.subscribeOn(scheduler)
+                .filter { it is RecorderBus.SelectedDevice }
+                .map { it as RecorderBus.SelectedDevice }
+                .map { it.device }
+                .subscribe { createSession(it) }
+    }
+
+    private fun unsubscribe() {
+        disposables.values.forEach { it.dispose() }
+        disposables.clear()
+    }
+
     inner class Binder : android.os.Binder() {
 
         fun getService(): RecorderService = this@RecorderService
@@ -90,19 +111,7 @@ class RecorderService : Service() {
         override fun onLooperPrepared() {
             val scheduler = AndroidSchedulers.from(looper)
 
-            disposables["commands"] = bus.commandSubject.subscribeOn(scheduler)
-                    .subscribe {
-                        when (it) {
-                            is RecorderBus.StartRecording -> startRecording()
-                            is RecorderBus.StopRecording -> stopRecording()
-                        }
-                    }
-
-            disposables["devices"] = bus.eventSubject.subscribeOn(scheduler)
-                    .filter { it is RecorderBus.SelectedDevice }
-                    .map { it as RecorderBus.SelectedDevice }
-                    .map { it.device }
-                    .subscribe { createSession(it) }
+            subscribe(scheduler)
         }
 
     }
