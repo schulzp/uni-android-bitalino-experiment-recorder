@@ -100,11 +100,11 @@ class RecorderVideoFragment : Fragment(),
     private var isRecordingVideo = false
         set(value) {
             recorderServiceConnection.whenConnected { _, service ->
-                service.bus.post(
-                        if (value)
-                            RecorderBus.VideoRecordingStarted()
-                        else
-                            RecorderBus.VideoRecordingStopped(nextVideoAbsolutePath ?: "unknown"))
+                service.bus.events.onNext(if (value)
+                                    RecorderBus.VideoRecordingStarted()
+                                else
+                                    RecorderBus.VideoRecordingStopped(nextVideoAbsolutePath ?: "unknown"))
+                Unit
             }
         }
 
@@ -173,7 +173,7 @@ class RecorderVideoFragment : Fragment(),
         super.onCreate(savedInstanceState)
 
         recorderServiceConnection = RecorderService.bind(activity!!) { _, service ->
-            service.bus.commandSubject.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
+            service.bus.commands.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
                 when (it) {
                     is RecorderBus.StartRecording -> startRecordingVideo()
                     is RecorderBus.StopRecording -> stopRecordingVideo()

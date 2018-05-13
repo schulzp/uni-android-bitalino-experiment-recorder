@@ -15,7 +15,7 @@ class RecorderFragment : ContentFragment(Content.RECORDER, R.string.recorder), F
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         recorderServiceConnection = RecorderService.bind(activity!!) { _, service ->
-            service.bus.post(RecorderBus.CreateSession())
+            service.bus.commands.onNext(RecorderBus.CreateSession())
 
             service.bus.recordingStopped.subscribeOn(AndroidSchedulers.mainThread()).subscribe { event ->
                 showToast(event.videoRecordingStopped.path)
@@ -32,7 +32,9 @@ class RecorderFragment : ContentFragment(Content.RECORDER, R.string.recorder), F
     override fun onDestroy() {
         super.onDestroy()
 
-        recorderServiceConnection.whenConnected { _, service -> service.bus.post(RecorderBus.DestroySession()) }
+        recorderServiceConnection.whenConnected { _, service ->
+            service.bus.commands.onNext(RecorderBus.DestroySession())
+        }
         recorderServiceConnection.close(activity!!)
     }
 

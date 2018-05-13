@@ -4,31 +4,34 @@ import android.bluetooth.BluetoothDevice
 import android.os.Environment
 import android.util.Log
 import io.reactivex.Scheduler
-import uni.bremen.conditionrecorder.bitalino.BITalinoFrameWriter
+import uni.bremen.conditionrecorder.bitalino.BITalinoFrameMapper
 import uni.bremen.conditionrecorder.bitalino.BITalinoRecorder
+import uni.bremen.conditionrecorder.io.DataWriter
 import java.io.File
 
 class RecorderSession(private val service: RecorderService, private val scheduler: Scheduler) {
 
     private val disposables = DisposableMap()
 
+    private val aggregator = BITalinoFrameMapper()
+
     private var bitalinoRecorder: BITalinoRecorder? = null
 
     fun create() {
-        disposables["commands"] = service.bus.commandSubject.subscribeOn(scheduler)
+        disposables["commands"] = service.bus.commands.subscribeOn(scheduler)
                 .subscribe {
                     when (it) {
                         is RecorderBus.StartRecording -> startRecording()
                         is RecorderBus.StopRecording -> stopRecording()
                     }
                 }
-
-        disposables["devices"] = service.bus.eventSubject.subscribeOn(scheduler)
-                .filter { it is RecorderBus.SelectedDevice }
-                .map { it as RecorderBus.SelectedDevice }
-                .map { it.device }
-                .subscribe { createSession(it) }
-
+        disposables["events"] = service.bus.events.subscribeOn(scheduler)
+                .subscribe {
+                    when (it) {
+                        is RecorderBus.SelectedDevice -> createRecorder(it.device)
+                        is RecorderBus.PhaseSelected -> aggregator?.phase = it.phase
+                    }
+                }
         Log.d(TAG, "created")
     }
 
@@ -39,27 +42,46 @@ class RecorderSession(private val service: RecorderService, private val schedule
     }
 
     private fun startRecording() {
+        if (bitalinoRecorder == null) throw IllegalStateException("no recorder available")
+
         Log.d(TAG, "started recording")
 
-        bitalinoRecorder?.start()
+        val file = getDataOutputFile()
+        val writer = DataWriter(file)
+
+        aggregator.reset()
+
+        Log.d(TAG, "writing to $file")
+
+        val framesKey = "data.bitalino"
+
+        disposables[framesKey] = bitalinoRecorder!!.frames
+                .doOnError { error ->
+                    Log.e(TAG, "data.bitalino error", error)
+                }
+                .doFinally {
+                    disposables.remove(framesKey)?.dispose()
+                    writer.close()
+                }
+                .subscribeOn(scheduler)
+                .map(aggregator::map)
+                .subscribe(writer::write)
+
+        bitalinoRecorder!!.start()
     }
 
     private fun stopRecording() {
         Log.d(TAG, "stopped recording")
 
         bitalinoRecorder?.stop()
-        bitalinoRecorder?.writer?.close()
     }
 
-    private fun createSession(bluetoothDevice: BluetoothDevice) {
-        bitalinoRecorder = BITalinoRecorder(service, bluetoothDevice)
-        val file = getBitalinoOutputFile()
-        Log.d(TAG, "writing to $file")
-        bitalinoRecorder?.writer = BITalinoFrameWriter(file)
+    private fun createRecorder(device: BluetoothDevice) {
+        bitalinoRecorder = BITalinoRecorder(device, service)
         bitalinoRecorder?.connect()
     }
 
-    private fun getBitalinoOutputFile(): File {
+    private fun getDataOutputFile(): File {
         val externalFilesDir = service.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         return File(externalFilesDir, "bitalino.csv")
     }

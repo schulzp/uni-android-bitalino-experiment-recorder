@@ -62,7 +62,7 @@ class RecorderService : Service() {
     }
 
     private fun subscribe(scheduler: Scheduler) {
-        disposables["commands"] = bus.commandSubject.subscribeOn(scheduler)
+        disposables["commands"] = bus.commands.subscribeOn(scheduler)
                 .subscribe {
                     when (it) {
                         is RecorderBus.CreateSession -> createSession(scheduler)

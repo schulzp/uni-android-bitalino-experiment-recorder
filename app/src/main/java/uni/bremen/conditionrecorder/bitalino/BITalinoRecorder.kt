@@ -11,19 +11,23 @@ import info.plux.pluxapi.Communication
 import info.plux.pluxapi.Constants
 import info.plux.pluxapi.bitalino.*
 import info.plux.pluxapi.bitalino.bth.OnBITalinoDataAvailable
+import io.reactivex.subjects.PublishSubject
 import uni.bremen.conditionrecorder.RecorderBus
 import uni.bremen.conditionrecorder.RecorderDeviceFragment
 import uni.bremen.conditionrecorder.RecorderService
 
-class BITalinoRecorder(val service: RecorderService, val bluetoothDevice: BluetoothDevice) {
+class BITalinoRecorder(val bluetoothDevice: BluetoothDevice, val service: RecorderService) {
 
-    var writer: BITalinoFrameWriter? = null
+    var frames: PublishSubject<BITalinoFrame> = createObservable()
+        private set(value) {
+            field = value
+        }
 
     private var bitalino: BITalinoCommunication? = null
 
     private var registerReceiverIntent: Intent? = null
 
-    private val dataReceiver: OnBITalinoDataAvailable = OnBITalinoDataAvailable { writer?.write(it) }
+    private val dataReceiver = OnBITalinoDataAvailable { frame -> frames.onNext(frame) }
 
     private val updateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -55,7 +59,7 @@ class BITalinoRecorder(val service: RecorderService, val bluetoothDevice: Blueto
                     }
                 }
 
-                service.bus.post(RecorderBus.DeviceStateChanged(bluetoothDevice, state))
+                service.bus.events.onNext(RecorderBus.DeviceStateChanged(bluetoothDevice, state))
 
             } else if (Constants.ACTION_DATA_AVAILABLE == action) {
                 if (intent.hasExtra(Constants.EXTRA_DATA)) {
@@ -102,12 +106,22 @@ class BITalinoRecorder(val service: RecorderService, val bluetoothDevice: Blueto
     }
 
     fun start() {
+        Log.d(TAG, "started")
+        service.bus.events.onNext(RecorderBus.BitalinoRecordingStarted())
         bitalino?.start(intArrayOf(0, 1, 2, 3, 4, 5), 1)
     }
 
     fun stop() {
+        Log.d(TAG, "stopped")
+        service.bus.events.onNext(RecorderBus.BitalinoRecordingStopped())
+        frames.onComplete()
+        frames = createObservable()
+
         bitalino?.stop()
     }
+
+    private fun createObservable(): PublishSubject<BITalinoFrame> =
+            PublishSubject.create()
 
     fun disconnect() {
         if (registerReceiverIntent != null) {

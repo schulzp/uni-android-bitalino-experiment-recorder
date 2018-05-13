@@ -67,7 +67,7 @@ class RecorderDeviceListFragment : Fragment() {
             var device = data?.extras?.getParcelable<BluetoothDevice>(EXTRA_DEVICE)
             if (device != null) {
                 recorderServiceConnection.whenConnected { _, service ->
-                    service.bus.post(RecorderBus.SelectedDevice(device))
+                    service.bus.events.onNext(RecorderBus.SelectedDevice(device))
                 }
             }
         }
@@ -107,7 +107,7 @@ class RecorderDeviceListFragment : Fragment() {
 
         bluetoothAdapter.bondedDevices
                 .filter { it.address == "20:16:02:14:75:37" }
-                .forEach { service.bus.post(RecorderBus.SelectedDevice(it)) }
+                .forEach { service.bus.events.onNext(RecorderBus.SelectedDevice(it)) }
     }
 
     companion object {

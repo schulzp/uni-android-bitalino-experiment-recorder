@@ -49,11 +49,11 @@ class RecorderControlsFragment : Fragment() {
                     if (recording)
                         recorderServiceConnection
                                 .whenConnected { _, service ->
-                                    service.bus.post(RecorderBus.StopRecording(), RecorderBus.BitalinoRecordingStopped()) }
+                                    service.bus.commands.onNext(RecorderBus.StopRecording()) }
                     else
                         recorderServiceConnection
                                 .whenConnected { _, service ->
-                                    service.bus.post(RecorderBus.StartRecording(), RecorderBus.BitalinoRecordingStarted()) }
+                                    service.bus.commands.onNext(RecorderBus.StartRecording()) }
         }
     }
 
