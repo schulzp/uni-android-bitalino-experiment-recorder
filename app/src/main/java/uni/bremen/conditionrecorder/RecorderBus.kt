@@ -5,6 +5,7 @@ import android.util.Log
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.zipWith
 import io.reactivex.subjects.PublishSubject
+import uni.bremen.conditionrecorder.bitalino.Recorder
 
 
 class RecorderBus {
@@ -19,13 +20,13 @@ class RecorderBus {
         it.doOnError { error -> Log.e("COMMAND BUS", "an error occurred on the bus", error) }
     }
 
-    val bitalinoRecoringStared = events.filter { it is RecorderBus.BitalinoRecordingStarted }.map { it as RecorderBus.BitalinoRecordingStarted }
+    val bitalinoRecordingStarted = events.filter { it is RecorderBus.BitalinoRecordingStarted }.map { it as RecorderBus.BitalinoRecordingStarted }
     val bitalinoRecordingStopped = events.filter { it is RecorderBus.BitalinoRecordingStopped }.map { it as RecorderBus.BitalinoRecordingStopped }
 
     val videoRecordingStarted = events.filter { it is RecorderBus.VideoRecordingStarted }.map { it as RecorderBus.VideoRecordingStarted }
     val videoRecordingStopped = events.filter { it is RecorderBus.VideoRecordingStopped }.map { it as RecorderBus.VideoRecordingStopped }
 
-    val recordingStarted = videoRecordingStarted.zipWith(bitalinoRecoringStared, { v, s -> RecorderBus.RecordingStared(s, v) })
+    val recordingStarted = videoRecordingStarted.zipWith(bitalinoRecordingStarted, { v, s -> RecorderBus.RecordingStared(s, v) })
     val recordingStopped = videoRecordingStopped.zipWith(bitalinoRecordingStopped, { v, s -> RecorderBus.RecordingStopped(s, v) })
 
     val deviceSelected =  events
@@ -33,10 +34,12 @@ class RecorderBus {
             .map { event -> event as RecorderBus.SelectedDevice }
 
     val deviceStateChange =  events
-            .filter { event -> event is RecorderBus.DeviceStateChanged }
-            .map { event -> event as RecorderBus.DeviceStateChanged }
+            .filter { event -> event is RecorderBus.RecorderStateChanged }
+            .map { event -> event as RecorderBus.RecorderStateChanged }
 
     val recording = Observable.merge(recordingStarted, recordingStopped)
+
+    val recorderSession = events.filter { it is RecorderSessionStateChanged }.map { it as RecorderSessionStateChanged }
 
     interface Event
     interface Command
@@ -60,6 +63,8 @@ class RecorderBus {
 
     class PhaseSelected(val phase:Int) : Event
 
-    class DeviceStateChanged(val device: BluetoothDevice, val state: Any) : Event
+    class RecorderStateChanged(val device: BluetoothDevice, val state: Recorder.State) : Event
+
+    class RecorderSessionStateChanged(val state:RecorderSession.State) : Event
 
 }

@@ -83,7 +83,7 @@ class RecorderDeviceListFragment : Fragment() {
         if (statefulBluetoothDevice != null) {
             when (statefulBluetoothDevice) {
                 is DeviceListAdapter.BITalinoBluetoothDevice -> {
-                    statefulBluetoothDevice.state = state as? Constants.States
+                    //statefulBluetoothDevice.state = state as? Constants.States
                 }
             }
 
@@ -108,12 +108,6 @@ class RecorderDeviceListFragment : Fragment() {
         bluetoothAdapter.bondedDevices
                 .filter { it.address == "20:16:02:14:75:37" }
                 .forEach { service.bus.events.onNext(RecorderBus.SelectedDevice(it)) }
-    }
-
-    companion object {
-
-        fun newInstance():RecorderDeviceListFragment = RecorderDeviceListFragment()
-
     }
 
 }

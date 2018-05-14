@@ -6,16 +6,35 @@ import android.util.Log
 import io.reactivex.Scheduler
 import uni.bremen.conditionrecorder.bitalino.BITalinoFrameMapper
 import uni.bremen.conditionrecorder.bitalino.BITalinoRecorder
+import uni.bremen.conditionrecorder.bitalino.Recorder
 import uni.bremen.conditionrecorder.io.DataWriter
 import java.io.File
 
 class RecorderSession(private val service: RecorderService, private val scheduler: Scheduler) {
+
+    enum class State {
+        NOT_READY, READY, RECORDING;
+
+        companion object {
+
+            fun valueOf(state:Recorder.State):State {
+                return when(state) {
+                    Recorder.State.CONNECTED -> State.READY
+                    Recorder.State.RECORDING -> State.RECORDING
+                    else -> State.NOT_READY
+                }
+            }
+
+        }
+    }
 
     private val disposables = DisposableMap()
 
     private val aggregator = BITalinoFrameMapper()
 
     private var bitalinoRecorder: BITalinoRecorder? = null
+
+    val devices = HashMap<BluetoothDevice, Recorder.State>()
 
     fun create() {
         disposables["commands"] = service.bus.commands.subscribeOn(scheduler)
@@ -28,8 +47,9 @@ class RecorderSession(private val service: RecorderService, private val schedule
         disposables["events"] = service.bus.events.subscribeOn(scheduler)
                 .subscribe {
                     when (it) {
+                        is RecorderBus.RecorderStateChanged -> updateState(it)
                         is RecorderBus.SelectedDevice -> createRecorder(it.device)
-                        is RecorderBus.PhaseSelected -> aggregator?.phase = it.phase
+                        is RecorderBus.PhaseSelected -> aggregator.phase = it.phase
                     }
                 }
         Log.d(TAG, "created")
@@ -37,6 +57,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
 
     fun destroy() {
         stopRecording()
+        bitalinoRecorder?.disconnect()
         disposables.dispose()
         Log.d(TAG, "destroyed")
     }
@@ -77,13 +98,25 @@ class RecorderSession(private val service: RecorderService, private val schedule
     }
 
     private fun createRecorder(device: BluetoothDevice) {
-        bitalinoRecorder = BITalinoRecorder(device, service)
-        bitalinoRecorder?.connect()
+        val recorder = BITalinoRecorder(device, service)
+        devices[device] = recorder.getState()
+        bitalinoRecorder = recorder
+        recorder.connect()
     }
 
     private fun getDataOutputFile(): File {
         val externalFilesDir = service.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         return File(externalFilesDir, "bitalino.csv")
+    }
+
+    private fun updateState(stateChanged: RecorderBus.RecorderStateChanged) {
+        devices[stateChanged.device] = stateChanged.state
+
+        val lowest = Recorder.State.lowest(devices.values)
+
+        val state = State.valueOf(lowest)
+
+        service.bus.events.onNext(RecorderBus.RecorderSessionStateChanged(state))
     }
 
     companion object {

@@ -46,9 +46,9 @@ class RecorderFragment : ContentFragment(Content.RECORDER, R.string.recorder), F
         super.onViewCreated(view, savedInstanceState)
 
         childFragmentManager.beginTransaction()
-                .replace(R.id.videoPlaceholder, RecorderVideoFragment.newInstance())
-                .replace(R.id.devicesPlaceholder, RecorderDeviceListFragment.newInstance())
-                .replace(R.id.controlsPlaceholder, RecorderControlsFragment.newInstance())
+                .replace(R.id.videoPlaceholder, RecorderVideoFragment())
+                .replace(R.id.devicesPlaceholder, RecorderDeviceListFragment())
+                .replace(R.id.controlsPlaceholder, RecorderControlsFragment())
                 .commit()
     }
 

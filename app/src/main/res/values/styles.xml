@@ -67,7 +67,7 @@
     <style name="AppTheme.Item.Device.Status">
         <item name="android:textAppearance">@style/TextAppearance.Item.Device.Status</item>
         <item name="android:gravity">center_vertical|center_horizontal</item>
-        <item name="android:drawableLeft">@drawable/ic_connected_indicator</item>
+        <item name="android:drawableLeft">@drawable/connected_indicator</item>
         <item name="android:drawablePadding">2dp</item>
     </style>
 
@@ -97,8 +97,17 @@
 
     </style>
 
+    <style name="TextAppearance.Recorder.PhaseButton" parent="TextAppearance.AppCompat.Large">
+        <item name="android:textSize">40sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
     <style name="AppTheme.Item.Empty">
         <item name="android:gravity">center_vertical|center_horizontal</item>
+    </style>
+
+    <style name="AppTheme.Recorder.PhaseButton" parent="Base.Widget.AppCompat.Button">
+        <item name="android:textAppearance">@style/TextAppearance.Recorder.PhaseButton</item>
     </style>
 
     <dimen name="item_padding_top">5dp</dimen>

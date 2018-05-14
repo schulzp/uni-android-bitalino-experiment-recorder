@@ -1,13 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <Button
-        android:id="@+id/recordButton"
-        android:text="@string/record"
-        android:layout_weight="1"
+    <ToggleButton android:id="@+id/phaseButton1"
+        style="@style/AppTheme.Recorder.PhaseButton"
+        android:textOn="@string/phase_selected"
+        android:textOff="@string/phase_1"
         android:layout_width="0dp"
+        android:layout_height="@dimen/phase_button_height"
+        android:layout_margin="0dp"
+        android:enabled="false"
+        app:layout_constraintWidth_min="100dp"
+        app:layout_constraintBottom_toTopOf="@id/verticalBarrier"
+        app:layout_constraintEnd_toStartOf="@id/phaseButton2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ToggleButton android:id="@+id/phaseButton2"
+        style="@style/AppTheme.Recorder.PhaseButton"
+        android:textOn="@string/phase_selected"
+        android:textOff="@string/phase_2"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/phase_button_height"
+        android:layout_margin="0dp"
+        android:enabled="false"
+        app:layout_constraintWidth_min="100dp"
+        app:layout_constraintBottom_toTopOf="@id/verticalBarrier"
+        app:layout_constraintEnd_toStartOf="@id/phaseButton3"
+        app:layout_constraintStart_toEndOf="@id/phaseButton1"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ToggleButton android:id="@+id/phaseButton3"
+        style="@style/AppTheme.Recorder.PhaseButton"
+        android:textOn="@string/phase_selected"
+        android:textOff="@string/phase_3"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/phase_button_height"
+        android:layout_margin="0dp"
+        android:enabled="false"
+        app:layout_constraintWidth_min="100dp"
+        app:layout_constraintBottom_toTopOf="@id/verticalBarrier"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/phaseButton2"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <android.support.constraint.Barrier
+        android:id="@+id/verticalBarrier"
+        app:barrierDirection="bottom"
+        app:barrierAllowsGoneWidgets="true"
+        app:constraint_referenced_ids="phaseButton1,phaseButton2,phaseButton3"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
-</LinearLayout>
+    <ToggleButton
+        android:id="@+id/recordButton"
+        android:textOn="@string/stop"
+        android:textOff="@string/record"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="0dp"
+        android:enabled="false"
+
+        android:drawableLeft="@drawable/recording_indicator"
+        android:drawablePadding="0dp"
+
+        app:layout_constraintVertical_weight="2"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/verticalBarrier"/>
+
+</android.support.constraint.ConstraintLayout>

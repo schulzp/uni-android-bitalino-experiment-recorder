@@ -16,4 +16,8 @@
     <string name="bluetooth_not_supported">Bluetooth is not supported</string>
     <string name="bluetooth_le_not_supported">Bluetooth LE is not supported</string>
     <string name="device">Device</string>
+    <string name="phase_1">Way In</string>
+    <string name="phase_2">Rest</string>
+    <string name="phase_3">Way Out</string>
+    <string name="phase_selected">Over</string>
 </resources>
