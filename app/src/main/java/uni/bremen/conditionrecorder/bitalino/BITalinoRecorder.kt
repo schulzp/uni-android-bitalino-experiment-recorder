@@ -86,7 +86,7 @@ class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService
         return state
     }
 
-    fun connect() {
+    override fun connect() {
         var communication = Communication.getById(device.type)
 
         Log.d(TAG, "communication: ${communication.name}")
@@ -124,7 +124,7 @@ class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService
         }
     }
 
-    fun disconnect() {
+    override fun disconnect() {
         if (registeredReceiver) {
             service.unregisterReceiver(updateReceiver)
             registeredReceiver = false

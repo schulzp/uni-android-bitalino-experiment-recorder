@@ -18,4 +18,8 @@ interface Recorder {
 
     fun getState():State
 
+    fun connect()
+
+    fun disconnect()
+
 }

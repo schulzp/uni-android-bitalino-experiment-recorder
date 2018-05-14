@@ -4,35 +4,33 @@ import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Handler
 import android.view.*
-import info.plux.pluxapi.BTHDeviceScan
-import info.plux.pluxapi.Constants
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.fragment_list.*
+import uni.bremen.conditionrecorder.bitalino.BITalinoDiscovery
+import uni.bremen.conditionrecorder.wahoo.WahooDiscovery
+import java.util.*
 
 class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
     private lateinit var listAdapter: DeviceListAdapter
+
     private lateinit var bluetoothAdapter: BluetoothAdapter
 
-    private var isScanning: Boolean = false
-    private val handler = Handler()
+    private val discoveries = LinkedList<BluetoothDeviceDiscovery>()
 
-    private var bthDeviceScan: BTHDeviceScan? = null
-    private var isScanDevicesUpdateReceiverRegistered = false
+    private var devices:Observable<BluetoothDevice>? = null
 
     private val onItemClickListener = object:GenericRecycleViewAdapter.OnItemClickListener<DeviceListAdapter.StatefulBluetoothDevice<*>> {
 
         override fun onItemSelected(item: DeviceListAdapter.StatefulBluetoothDevice<*>): Boolean {
-            if (isScanning) {
-                bthDeviceScan?.stopScan()
-                isScanning = false
+            if (isScanning()) {
+                scanDevice(false)
             }
 
             if (activity?.intent?.action == Intent.ACTION_PICK && activity?.intent?.type == INTENT_TYPE_DEVICE) {
@@ -48,21 +46,6 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
         }
     }
 
-    private val scanDevicesUpdateReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val action = intent.action
-
-            if (action == Constants.ACTION_MESSAGE_SCAN) {
-                val bluetoothDevice = intent.getParcelableExtra<BluetoothDevice>(Constants.EXTRA_DEVICE_SCAN)
-
-                if (bluetoothDevice != null) {
-                    listAdapter.add(DeviceListAdapter.BITalinoBluetoothDevice(bluetoothDevice))
-                    listAdapter.notifyDataSetChanged()
-                }
-            }
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -75,11 +58,18 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
         requestLocationPermissions()
 
-        bthDeviceScan = BTHDeviceScan(this.context)
+        discoveries.add(BITalinoDiscovery(activity!!))
+        discoveries.add(WahooDiscovery(activity!!))
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
             : View? = inflater.inflate(R.layout.fragment_list, container, false)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        setupList()
+    }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
@@ -93,7 +83,7 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
     override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.menu_list_devices, menu)
-        if (!isScanning) {
+        if (!isScanning()) {
             menu.findItem(R.id.menu_stop).isVisible = false
             menu.findItem(R.id.menu_scan).isVisible = true
             menu.findItem(R.id.menu_refresh).actionView = null
@@ -117,15 +107,10 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
         return true
     }
 
-
-
     override fun onResume() {
         super.onResume()
 
         withObserver()?.onContentResumed(this)
-
-        context?.registerReceiver(scanDevicesUpdateReceiver, IntentFilter(Constants.ACTION_MESSAGE_SCAN))
-        isScanDevicesUpdateReceiverRegistered = true
 
         // Ensures Bluetooth is enabled on the device.  If Bluetooth is not currently enabled,
         // fire an intent to display a dialog asking the user to grant permission to enable it.
@@ -136,57 +121,21 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
             }
         }
 
-        setupList()
-
         for (device in bluetoothAdapter.bondedDevices) {
-            listAdapter.add(DeviceListAdapter.BITalinoBluetoothDevice(device))
+            //listAdapter.add(DeviceListAdapter.BITalinoBluetoothDevice(device))
         }
 
-        //scanDevice(true)
-    }
-
-    private fun setupList() {
-        listAdapter = DeviceListAdapter(activity!!)
-        listAdapter.onItemClickListener = onItemClickListener
-
-        RecycleViewHelper.verticalList(list, activity!!).adapter = listAdapter
+        scanDevice(true)
     }
 
     override fun onPause() {
         super.onPause()
         scanDevice(false)
+        discoveries.forEach { it.stop(); it.destroy() }
         listAdapter.clear()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-
-        bthDeviceScan?.closeScanReceiver()
-
-        if (isScanDevicesUpdateReceiverRegistered) {
-            context?.unregisterReceiver(scanDevicesUpdateReceiver)
-        }
-    }
-
-    private fun scanDevice(enable: Boolean) {
-        if (enable) {
-            // Stops isScanning after a pre-defined scan period.
-            handler.postDelayed({
-                isScanning = false
-                bthDeviceScan!!.stopScan()
-                activity?.invalidateOptionsMenu()
-            }, SCAN_PERIOD)
-
-            isScanning = true
-            bthDeviceScan!!.doDiscovery()
-        } else {
-            isScanning = false
-            bthDeviceScan!!.stopScan()
-        }
-        activity?.invalidateOptionsMenu()
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         // User chose not to enable Bluetooth.
         if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
             activity?.finish()
@@ -194,6 +143,7 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
         }
         super.onActivityResult(requestCode, resultCode, data)
     }
+
     override fun onRequestPermissionsResult(
             requestCode: Int,
             permissions: Array<String>,
@@ -228,13 +178,41 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
         }
     }
 
+    private fun setupList() {
+        listAdapter = DeviceListAdapter(activity!!)
+        listAdapter.onItemClickListener = onItemClickListener
+
+        RecycleViewHelper.verticalList(list, activity!!).adapter = listAdapter
+    }
+
+    private fun addDevice(bluetoothDevice: BluetoothDevice) {
+        listAdapter.add(DeviceListAdapter.BITalinoBluetoothDevice(bluetoothDevice))
+        listAdapter.notifyDataSetChanged()
+    }
+
+    private fun isScanning(): Boolean = discoveries.any { it.isScanning() }
+
+    private fun scanDevice(scan: Boolean) {
+        activity?.invalidateOptionsMenu()
+
+        discoveries.forEach { discovery ->
+            if (scan) {
+                val observable = discovery.start()
+                devices = devices?.mergeWith(observable) ?: observable
+            } else {
+                discovery.stop()
+            }
+        }
+
+        devices
+                ?.doOnComplete { activity!!.invalidateOptionsMenu() }
+                ?.subscribeOn(AndroidSchedulers.mainThread())
+                ?.subscribe(this::addDevice)
+    }
+
     companion object {
 
-        const val SELECTION_ID = "selected-devices"
-
         val TAG = Content.DEVICES.name
-
-        fun newInstance():ListDevicesFragment = ListDevicesFragment()
 
     }
 
