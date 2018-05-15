@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.view.*
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.fragment_list.*
 import uni.bremen.conditionrecorder.bitalino.BITalinoDiscovery
 import uni.bremen.conditionrecorder.wahoo.WahooDiscovery
@@ -22,9 +23,9 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
 
-    private val discoveries = LinkedList<BluetoothDeviceDiscovery>()
+    private val discoveryProviders = LinkedList<() -> BluetoothDeviceDiscovery>()
 
-    private var devices:Observable<BluetoothDevice>? = null
+    private val discoveries = LinkedList<BluetoothDeviceDiscovery>()
 
     private val onItemClickListener = object:GenericRecycleViewAdapter.OnItemClickListener<DeviceListAdapter.StatefulBluetoothDevice<*>> {
 
@@ -58,8 +59,8 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
         requestLocationPermissions()
 
-        discoveries.add(BITalinoDiscovery(activity!!))
-        discoveries.add(WahooDiscovery(activity!!))
+        discoveryProviders.add({ BITalinoDiscovery(activity!!) })
+        discoveryProviders.add({ WahooDiscovery(activity!!) })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
@@ -133,15 +134,14 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
         scanDevice(false)
 
-        discoveries.forEach { it.stop() }
-
         listAdapter.clear()
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
-        discoveries.forEach { it.destroy() }
+        discoveries.forEach(BluetoothDeviceDiscovery::destroy)
+        discoveries.clear()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -202,21 +202,26 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
     private fun isScanning(): Boolean = discoveries.any { it.isScanning() }
 
     private fun scanDevice(scan: Boolean) {
-        activity?.invalidateOptionsMenu()
+        if (scan) {
+            val devices: Observable<BluetoothDevice>? = discoveryProviders
+                    .map{ provider ->
+                        val discovery = provider()
+                        discoveries.add(discovery)
+                        discovery.start()
+                    }
+                    .reduce { previous, observable -> previous.mergeWith(observable) }
 
-        discoveries.forEach { discovery ->
-            if (scan) {
-                val observable = discovery.start()
-                devices = devices?.mergeWith(observable) ?: observable
-            } else {
-                discovery.stop()
-            }
+            var disposable:Disposable? = null
+
+            disposable = devices
+                    ?.doFinally { activity!!.invalidateOptionsMenu(); disposable?.dispose(); }
+                    ?.subscribeOn(AndroidSchedulers.mainThread())
+                    ?.subscribe(this::addDevice)
+        } else {
+            discoveries.forEach(BluetoothDeviceDiscovery::stop)
         }
 
-        devices
-                ?.doOnComplete { activity!!.invalidateOptionsMenu() }
-                ?.subscribeOn(AndroidSchedulers.mainThread())
-                ?.subscribe(this::addDevice)
+        activity!!.invalidateOptionsMenu()
     }
 
     companion object {

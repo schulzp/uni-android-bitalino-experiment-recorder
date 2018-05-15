@@ -2,6 +2,7 @@ package uni.bremen.conditionrecorder
 
 import android.bluetooth.BluetoothDevice
 import android.os.Handler
+import android.util.Log
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 
@@ -10,33 +11,33 @@ abstract class BluetoothDeviceDiscovery {
 
     private val handler = Handler()
 
-    protected var devices: PublishSubject<BluetoothDevice>? = null
-        private set(value) { field = value }
+    protected val devices: PublishSubject<BluetoothDevice> = PublishSubject.create<BluetoothDevice>()
 
-    fun isScanning(): Boolean = !(devices?.hasComplete() ?: false)
+    private var started = false
+
+    fun isScanning(): Boolean = started && !devices.hasComplete()
 
     open fun start(duration:Long = SCAN_DURATION): Observable<BluetoothDevice> {
-        val devices = createSubject()
+        if (started) throw IllegalStateException("already started")
+
+        started = true
+
+        devices.doFinally { Log.d("BTD", "discovery ended") }
 
         if (duration > 0) {
             handler.postDelayed(this::stop, duration)
         }
 
-        this.devices = devices
-
         return devices
     }
 
     open fun stop() {
-        devices?.onComplete()
-        devices = null
+        devices.onComplete()
     }
 
     open fun destroy() {
 
     }
-
-    private fun createSubject() = PublishSubject.create<BluetoothDevice>()
 
     companion object {
 

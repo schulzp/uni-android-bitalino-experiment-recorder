@@ -24,7 +24,7 @@ class BITalinoDiscovery(private val context: Context) : BluetoothDeviceDiscovery
                 val bluetoothDevice = intent.getParcelableExtra<BluetoothDevice>(Constants.EXTRA_DEVICE_SCAN)
 
                 if (bluetoothDevice != null) {
-                    devices?.onNext(bluetoothDevice)
+                    devices.onNext(bluetoothDevice)
 
                     Log.d(TAG, "found bitalino device: $bluetoothDevice")
                 }
@@ -33,30 +33,24 @@ class BITalinoDiscovery(private val context: Context) : BluetoothDeviceDiscovery
 
     }
 
-    init {
-        context.registerReceiver(scanDevicesUpdateReceiver, IntentFilter(Constants.ACTION_MESSAGE_SCAN))
-    }
-
     override fun start(duration:Long): Observable<BluetoothDevice> {
         val subject = super.start(duration)
+
+        subject.doFinally {
+            try {
+                bthDeviceScan.stopScan()
+                bthDeviceScan.closeScanReceiver()
+                context.unregisterReceiver(scanDevicesUpdateReceiver)
+            } catch (e:Exception) {
+                Log.w(TAG, "failed to stop scan: ${e.message}")
+            }
+        }
+
+        context.registerReceiver(scanDevicesUpdateReceiver, IntentFilter(Constants.ACTION_MESSAGE_SCAN))
 
         bthDeviceScan.doDiscovery()
 
         return subject
-    }
-
-    override fun stop() {
-        bthDeviceScan.stopScan()
-    }
-
-    override fun destroy() {
-        super.destroy()
-
-        try {
-            context.unregisterReceiver(scanDevicesUpdateReceiver); bthDeviceScan.closeScanReceiver()
-        } catch (e:IllegalArgumentException) {
-            Log.w(TAG, "failed to unregister scan update receiver")
-        }
     }
 
     companion object {

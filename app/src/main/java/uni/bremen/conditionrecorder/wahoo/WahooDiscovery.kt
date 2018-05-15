@@ -19,18 +19,14 @@ class WahooDiscovery(context: Context) : BluetoothDeviceDiscovery() {
 
     private val listener = object : DiscoveryListener {
 
-        override fun onDiscoveredDeviceRssiChanged(connectionParams: ConnectionParams, rssi: Int) {
+        override fun onDiscoveredDeviceRssiChanged(connectionParams: ConnectionParams, rssi: Int) { }
 
-        }
-
-        override fun onDiscoveredDeviceLost(connectionParams: ConnectionParams) {
-
-        }
+        override fun onDiscoveredDeviceLost(connectionParams: ConnectionParams) { }
 
         override fun onDeviceDiscovered(connectionParams: ConnectionParams) {
             if (connectionParams is BTLEConnectionParams) {
-                devices?.onNext(connectionParams.bluetoothDevice)
                 Log.d(TAG, "discovered wahoo device: $connectionParams")
+                devices.onNext(connectionParams.bluetoothDevice)
             }
         }
 
@@ -39,16 +35,15 @@ class WahooDiscovery(context: Context) : BluetoothDeviceDiscovery() {
     override fun start(duration:Long): Observable<BluetoothDevice> {
         val subject = super.start(duration)
 
+        subject.doFinally {
+            connector.stopDiscovery(HardwareConnectorTypes.NetworkType.BTLE)
+        }
+
         connector.startDiscovery(
                 HardwareConnectorTypes.SensorType.HEARTRATE,
                 HardwareConnectorTypes.NetworkType.BTLE, listener)
 
         return subject
-    }
-
-    override fun stop() {
-        connector.stopDiscovery(HardwareConnectorTypes.NetworkType.BTLE)
-        super.stop()
     }
 
     override fun destroy() {
