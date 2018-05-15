@@ -13,7 +13,7 @@ abstract class BluetoothDeviceDiscovery {
     protected var devices: PublishSubject<BluetoothDevice>? = null
         private set(value) { field = value }
 
-    fun isScanning(): Boolean = devices?.hasComplete() ?: false
+    fun isScanning(): Boolean = !(devices?.hasComplete() ?: false)
 
     open fun start(duration:Long = SCAN_DURATION): Observable<BluetoothDevice> {
         val devices = createSubject()
@@ -29,6 +29,7 @@ abstract class BluetoothDeviceDiscovery {
 
     open fun stop() {
         devices?.onComplete()
+        devices = null
     }
 
     open fun destroy() {
@@ -39,7 +40,7 @@ abstract class BluetoothDeviceDiscovery {
 
     companion object {
 
-        const val SCAN_DURATION = 100000L
+        const val SCAN_DURATION = 10000L
 
     }
 

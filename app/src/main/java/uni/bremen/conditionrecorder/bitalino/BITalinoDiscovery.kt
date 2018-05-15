@@ -11,7 +11,7 @@ import info.plux.pluxapi.Constants
 import io.reactivex.Observable
 import uni.bremen.conditionrecorder.BluetoothDeviceDiscovery
 
-class BITalinoDiscovery(context: Context) : BluetoothDeviceDiscovery() {
+class BITalinoDiscovery(private val context: Context) : BluetoothDeviceDiscovery() {
 
     private var bthDeviceScan = BTHDeviceScan(context)
 
@@ -37,8 +37,6 @@ class BITalinoDiscovery(context: Context) : BluetoothDeviceDiscovery() {
         context.registerReceiver(scanDevicesUpdateReceiver, IntentFilter(Constants.ACTION_MESSAGE_SCAN))
     }
 
-    private var onDestroy = { context.unregisterReceiver(scanDevicesUpdateReceiver); bthDeviceScan.closeScanReceiver() }
-
     override fun start(duration:Long): Observable<BluetoothDevice> {
         val subject = super.start(duration)
 
@@ -54,7 +52,11 @@ class BITalinoDiscovery(context: Context) : BluetoothDeviceDiscovery() {
     override fun destroy() {
         super.destroy()
 
-        onDestroy()
+        try {
+            context.unregisterReceiver(scanDevicesUpdateReceiver); bthDeviceScan.closeScanReceiver()
+        } catch (e:IllegalArgumentException) {
+            Log.w(TAG, "failed to unregister scan update receiver")
+        }
     }
 
     companion object {

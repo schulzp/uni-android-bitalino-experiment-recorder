@@ -130,9 +130,18 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
     override fun onPause() {
         super.onPause()
+
         scanDevice(false)
-        discoveries.forEach { it.stop(); it.destroy() }
+
+        discoveries.forEach { it.stop() }
+
         listAdapter.clear()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        discoveries.forEach { it.destroy() }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

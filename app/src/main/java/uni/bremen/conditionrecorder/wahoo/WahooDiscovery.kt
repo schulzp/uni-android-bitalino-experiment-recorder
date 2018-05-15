@@ -51,6 +51,12 @@ class WahooDiscovery(context: Context) : BluetoothDeviceDiscovery() {
         super.stop()
     }
 
+    override fun destroy() {
+        super.destroy()
+
+        connector.shutdown()
+    }
+
     companion object {
 
         const val TAG = "WahooDiscovery"
