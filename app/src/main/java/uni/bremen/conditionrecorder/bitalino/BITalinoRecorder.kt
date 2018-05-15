@@ -12,6 +12,7 @@ import info.plux.pluxapi.Constants
 import info.plux.pluxapi.bitalino.*
 import info.plux.pluxapi.bitalino.bth.OnBITalinoDataAvailable
 import io.reactivex.subjects.PublishSubject
+import uni.bremen.conditionrecorder.Recorder
 import uni.bremen.conditionrecorder.RecorderBus
 import uni.bremen.conditionrecorder.RecorderDeviceFragment
 import uni.bremen.conditionrecorder.RecorderService
@@ -82,7 +83,7 @@ class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService
         }
     }
 
-    override fun getState():Recorder.State {
+    override fun getState(): Recorder.State {
         return state
     }
 
@@ -103,14 +104,14 @@ class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService
         bitalino?.connect(device.address)
     }
 
-    fun start() {
+    override fun start() {
         Log.d(TAG, "started")
         service.bus.events.onNext(RecorderBus.BitalinoRecordingStarted())
 
         bitalino?.start(intArrayOf(0, 1, 2, 3, 4, 5), 1)
     }
 
-    fun stop() {
+    override fun stop() {
         Log.d(TAG, "stopped")
         service.bus.events.onNext(RecorderBus.BitalinoRecordingStopped())
 

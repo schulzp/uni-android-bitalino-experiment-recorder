@@ -1,12 +1,14 @@
 package uni.bremen.conditionrecorder.bitalino
 
+import com.google.common.util.concurrent.AtomicDouble
 import info.plux.pluxapi.bitalino.BITalinoFrame
+import java.util.concurrent.atomic.AtomicInteger
 
 class BITalinoFrameMapper {
 
-    var phase:Int = 0
+    var phase = AtomicInteger(DEFAULT_PHASE)
 
-    var value:Int = 0
+    val value = AtomicDouble(DEFAULT_VALUE)
 
     fun map(frame:BITalinoFrame):Array<*> = arrayOf(
             frame.analogArray[0],
@@ -15,19 +17,19 @@ class BITalinoFrameMapper {
             frame.analogArray[3],
             frame.analogArray[4],
             frame.analogArray[5],
-            value,
-            phase)
+            value.getAndSet(DEFAULT_VALUE),
+            phase.get())
 
     fun reset() {
-        phase = DEFAULT_PHASE
-        value = DEFAULT_VALUE
+        phase.set(DEFAULT_PHASE)
+        value.set(DEFAULT_VALUE)
     }
 
     companion object {
 
         const val DEFAULT_PHASE = 0
 
-        const val DEFAULT_VALUE = 0
+        const val DEFAULT_VALUE = -1.0
 
     }
 

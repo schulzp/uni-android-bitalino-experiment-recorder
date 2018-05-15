@@ -5,7 +5,6 @@ import android.util.Log
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.zipWith
 import io.reactivex.subjects.PublishSubject
-import uni.bremen.conditionrecorder.bitalino.Recorder
 
 
 class RecorderBus {

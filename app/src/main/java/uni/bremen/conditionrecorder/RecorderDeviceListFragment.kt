@@ -13,9 +13,11 @@ import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import info.plux.pluxapi.Constants
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.fragment_recorder_device_list.*
+import uni.bremen.conditionrecorder.wahoo.WahooDiscovery
+import uni.bremen.conditionrecorder.wahoo.WahooRecorder
 
 
 class RecorderDeviceListFragment : Fragment() {
@@ -74,22 +76,20 @@ class RecorderDeviceListFragment : Fragment() {
     }
 
     private fun addDevice(device: BluetoothDevice) {
-        adapter.add(DeviceListAdapter.BITalinoBluetoothDevice(device))
+        adapter.add(DeviceListAdapter.RecorderBluetoothDevice(device))
         adapter.notifyDataSetChanged()
     }
 
     private fun updateDevice(device: BluetoothDevice, state:Any?) {
         val statefulBluetoothDevice = adapter.find(device)
         if (statefulBluetoothDevice != null) {
-            when (statefulBluetoothDevice) {
-                is DeviceListAdapter.BITalinoBluetoothDevice -> {
-                    //statefulBluetoothDevice.state = state as? Constants.States
-                }
+            if (statefulBluetoothDevice is DeviceListAdapter.RecorderBluetoothDevice && state is Recorder.State) {
+                statefulBluetoothDevice.state = state
             }
 
             val position = adapter.indexOf(statefulBluetoothDevice)
 
-            list.findViewHolderForAdapterPosition(position)
+            list?.findViewHolderForAdapterPosition(position)
                     ?.let { it as DeviceListAdapter.DeviceViewHolder }
                     ?.let { adapter.onBindViewHolder(it, statefulBluetoothDevice, position) }
         }
@@ -105,9 +105,25 @@ class RecorderDeviceListFragment : Fragment() {
         val bluetoothAdapter = bluetoothManager?.adapter
                 ?: throw RequiredFeatures.MissingFeatureException(PackageManager.FEATURE_BLUETOOTH)
 
-        bluetoothAdapter.bondedDevices
-                .filter { it.address == "20:16:02:14:75:37" }
-                .forEach { service.bus.events.onNext(RecorderBus.SelectedDevice(it)) }
+        val discovery = WahooDiscovery(service)
+        var disposable: Disposable? = null
+        disposable = discovery.start()
+                .filter { it.address == WahooRecorder.DEFAULT_ADDRESS }
+                .doFinally {
+                    bluetoothAdapter.bondedDevices
+                            .filter { it.address == "20:16:02:14:75:37" }
+                            .forEach { service.bus.events.onNext(RecorderBus.SelectedDevice(it)) }
+
+                    disposable?.dispose()
+                    discovery.destroy()
+                }
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    discovery.stop()
+                    service.bus.events.onNext(RecorderBus.SelectedDevice(it))
+                }
+
+        return
     }
 
 }

@@ -4,11 +4,13 @@ import android.bluetooth.BluetoothDevice
 import android.os.Environment
 import android.util.Log
 import io.reactivex.Scheduler
+import io.reactivex.disposables.Disposable
 import uni.bremen.conditionrecorder.bitalino.BITalinoFrameMapper
 import uni.bremen.conditionrecorder.bitalino.BITalinoRecorder
-import uni.bremen.conditionrecorder.bitalino.Recorder
 import uni.bremen.conditionrecorder.io.DataWriter
+import uni.bremen.conditionrecorder.wahoo.WahooRecorder
 import java.io.File
+import java.util.*
 
 class RecorderSession(private val service: RecorderService, private val scheduler: Scheduler) {
 
@@ -17,14 +19,13 @@ class RecorderSession(private val service: RecorderService, private val schedule
 
         companion object {
 
-            fun valueOf(state:Recorder.State):State {
+            fun valueOf(state: Recorder.State):State {
                 return when(state) {
                     Recorder.State.CONNECTED -> State.READY
                     Recorder.State.RECORDING -> State.RECORDING
                     else -> State.NOT_READY
                 }
             }
-
         }
     }
 
@@ -32,9 +33,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
 
     private val aggregator = BITalinoFrameMapper()
 
-    private var bitalinoRecorder: BITalinoRecorder? = null
-
-    val devices = HashMap<BluetoothDevice, Recorder.State>()
+    val recorders = HashMap<BluetoothDevice, Recorder>()
 
     fun create() {
         disposables["commands"] = service.bus.commands.subscribeOn(scheduler)
@@ -49,7 +48,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
                     when (it) {
                         is RecorderBus.RecorderStateChanged -> updateState(it)
                         is RecorderBus.SelectedDevice -> createRecorder(it.device)
-                        is RecorderBus.PhaseSelected -> aggregator.phase = it.phase
+                        is RecorderBus.PhaseSelected -> aggregator.phase.set(it.phase)
                     }
                 }
         Log.d(TAG, "created")
@@ -57,51 +56,78 @@ class RecorderSession(private val service: RecorderService, private val schedule
 
     fun destroy() {
         stopRecording()
-        bitalinoRecorder?.disconnect()
+        recorders.values.forEach(Recorder::disconnect)
         disposables.dispose()
         Log.d(TAG, "destroyed")
     }
 
     private fun startRecording() {
-        if (bitalinoRecorder == null) throw IllegalStateException("no recorder available")
+        if (recorders.isEmpty()) throw IllegalStateException("no recorder available")
 
         Log.d(TAG, "started recording")
 
-        val file = getDataOutputFile()
-        val writer = DataWriter(file)
-
         aggregator.reset()
 
-        Log.d(TAG, "writing to $file")
+        recorders.values.forEach(this::startRecorder)
+    }
 
-        val framesKey = "data.bitalino"
+    private fun startRecorder(recorder: Recorder) {
+        var disposable: Disposable? = null
 
-        disposables[framesKey] = bitalinoRecorder!!.frames
-                .doOnError { error ->
-                    Log.e(TAG, "data.bitalino error", error)
-                }
-                .doFinally {
-                    disposables.remove(framesKey)?.dispose()
-                    writer.close()
-                }
-                .subscribeOn(scheduler)
-                .map(aggregator::map)
-                .subscribe(writer::write)
+        if (recorder is BITalinoRecorder) {
+            val file = getDataOutputFile()
+            val writer = DataWriter(file)
+            Log.d(TAG, "writing to $file")
 
-        bitalinoRecorder!!.start()
+            disposable = recorder.frames
+                    .doOnError { error ->
+                        Log.e(TAG, "data.bitalino error", error)
+                    }
+                    .doFinally {
+                        disposable?.dispose()
+                        writer.close()
+                    }
+                    .subscribeOn(scheduler)
+                    .map(aggregator::map)
+                    .subscribe(writer::write)
+        } else if (recorder is WahooRecorder) {
+            disposable = recorder.data
+                    .doOnError {error ->
+                        Log.e(TAG, "data.wahoo error", error)
+                    }
+                    .doFinally {
+                        disposable?.dispose()
+                    }
+                    .subscribeOn(scheduler)
+                    .subscribe { data ->
+                        Log.v(TAG, "heart rate data: $data")
+                        aggregator.value.set(data.heartrate.asEventsPerSecond())
+                    }
+        }
+
+        recorder.start()
     }
 
     private fun stopRecording() {
         Log.d(TAG, "stopped recording")
 
-        bitalinoRecorder?.stop()
+        recorders.values.forEach(Recorder::stop)
     }
 
     private fun createRecorder(device: BluetoothDevice) {
-        val recorder = BITalinoRecorder(device, service)
-        devices[device] = recorder.getState()
-        bitalinoRecorder = recorder
+        val recorder = buildRecorder(device)
+        recorders[device] = recorder
         recorder.connect()
+    }
+
+    private fun buildRecorder(device: BluetoothDevice): Recorder {
+        if (device.address.endsWith("37")) {
+            return BITalinoRecorder(device, service)
+        }
+        if (device.address.endsWith("58")) {
+            return WahooRecorder(device, service)
+        }
+        throw IllegalArgumentException("unkown device type: $device")
     }
 
     private fun getDataOutputFile(): File {
@@ -110,9 +136,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
     }
 
     private fun updateState(stateChanged: RecorderBus.RecorderStateChanged) {
-        devices[stateChanged.device] = stateChanged.state
-
-        val lowest = Recorder.State.lowest(devices.values)
+        val lowest = Recorder.State.lowest(recorders.values.map(Recorder::getState))
 
         val state = State.valueOf(lowest)
 

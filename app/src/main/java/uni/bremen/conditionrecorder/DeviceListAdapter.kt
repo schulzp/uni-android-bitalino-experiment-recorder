@@ -74,12 +74,15 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
         val device: BluetoothDevice
         val type:Int
         var position:Int
-        var state:S?
+        var state:S
 
         fun update(deviceViewHolder: DeviceViewHolder, context: Context)
     }
 
-    class BITalinoBluetoothDevice(override val device: BluetoothDevice, override var state:Constants.States? = null) : StatefulBluetoothDevice<Constants.States> {
+    class RecorderBluetoothDevice(
+            override val device: BluetoothDevice,
+            override var state:Recorder.State = Recorder.State.DISCONNECTED)
+        : StatefulBluetoothDevice<Recorder.State> {
 
         override val type = 0
 
@@ -90,19 +93,19 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
         }
 
         override fun equals(other: Any?): Boolean {
-            return super.equals(other) || other is BITalinoBluetoothDevice && Objects.equals(device, other.device)
+            return super.equals(other) || other is RecorderBluetoothDevice && Objects.equals(device, other.device)
         }
 
         override fun update(deviceViewHolder: DeviceViewHolder, context: Context) {
             with(deviceViewHolder) {
-                val color = context.getColor(when(this@BITalinoBluetoothDevice.state) {
-                    Constants.States.CONNECTED -> R.color.deviceStatusConnected
+                val color = context.getColor(when(this@RecorderBluetoothDevice.state) {
+                    Recorder.State.CONNECTED -> R.color.deviceStatusConnected
                     Constants.States.DISCONNECTED -> R.color.deviceStatusDisconnected
                     else -> R.color.accent
                 })
 
                 state.compoundDrawables[0]?.setColorFilter(color, PorterDuff.Mode.MULTIPLY)
-                state.text = this@BITalinoBluetoothDevice.state?.name
+                state.text = this@RecorderBluetoothDevice.state?.name
             }
         }
 

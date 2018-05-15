@@ -123,7 +123,7 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
         }
 
         for (device in bluetoothAdapter.bondedDevices) {
-            //listAdapter.add(DeviceListAdapter.BITalinoBluetoothDevice(device))
+            //listAdapter.add(DeviceListAdapter.RecorderBluetoothDevice(device))
         }
 
         scanDevice(true)
@@ -195,7 +195,7 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
     }
 
     private fun addDevice(bluetoothDevice: BluetoothDevice) {
-        listAdapter.add(DeviceListAdapter.BITalinoBluetoothDevice(bluetoothDevice))
+        listAdapter.add(DeviceListAdapter.RecorderBluetoothDevice(bluetoothDevice))
         listAdapter.notifyDataSetChanged()
     }
 

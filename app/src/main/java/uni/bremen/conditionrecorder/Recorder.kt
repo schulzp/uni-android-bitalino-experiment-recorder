@@ -1,4 +1,4 @@
-package uni.bremen.conditionrecorder.bitalino
+package uni.bremen.conditionrecorder
 
 interface Recorder {
 
@@ -16,10 +16,14 @@ interface Recorder {
 
     }
 
-    fun getState():State
+    fun getState(): State
 
     fun connect()
 
     fun disconnect()
+
+    fun start()
+
+    fun stop()
 
 }

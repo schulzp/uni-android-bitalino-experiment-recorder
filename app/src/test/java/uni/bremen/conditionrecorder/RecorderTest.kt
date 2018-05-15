@@ -2,7 +2,6 @@ package uni.bremen.conditionrecorder
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import uni.bremen.conditionrecorder.bitalino.Recorder
 
 class RecorderTest {
 
