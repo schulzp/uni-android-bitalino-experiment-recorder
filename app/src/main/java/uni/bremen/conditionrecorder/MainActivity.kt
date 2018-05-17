@@ -18,6 +18,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.WindowManager
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -142,6 +143,8 @@ class MainActivity : AppCompatActivity(), ContentFragmentLifecycle {
         val appBarLayout = toolbar.parent as AppBarLayout
 
         if (enabled) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
             setSupportActionBar(null)
             appBarLayout.setExpanded(false, true)
             appBarLayout.visibility = View.GONE
