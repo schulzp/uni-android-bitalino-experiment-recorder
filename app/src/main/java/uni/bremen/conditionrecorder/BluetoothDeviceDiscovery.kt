@@ -41,7 +41,7 @@ abstract class BluetoothDeviceDiscovery {
 
     companion object {
 
-        const val SCAN_DURATION = 10000L
+        const val SCAN_DURATION = 20000L
 
     }
 
