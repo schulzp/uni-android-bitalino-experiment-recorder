@@ -108,7 +108,7 @@ class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService
         Log.d(TAG, "started")
         service.bus.events.onNext(RecorderBus.BitalinoRecordingStarted())
 
-        bitalino?.start(intArrayOf(0, 1, 2, 3, 4, 5), 1)
+        bitalino?.start(intArrayOf(0, 1, 2, 3, 4, 5), 1000)
     }
 
     override fun stop() {
