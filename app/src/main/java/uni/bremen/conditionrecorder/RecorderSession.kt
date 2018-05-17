@@ -132,7 +132,8 @@ class RecorderSession(private val service: RecorderService, private val schedule
 
     private fun getDataOutputFile(): File {
         val externalFilesDir = service.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-        return File(externalFilesDir, "bitalino.csv")
+        val time = System.currentTimeMillis()
+        return File(externalFilesDir, "data-$time.csv")
     }
 
     private fun updateState(stateChanged: RecorderBus.RecorderStateChanged) {
