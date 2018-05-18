@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice
 import android.os.Environment
 import android.util.Log
 import io.reactivex.Scheduler
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import uni.bremen.conditionrecorder.bitalino.BITalinoFrameMapper
 import uni.bremen.conditionrecorder.bitalino.BITalinoRecorder
@@ -29,28 +30,28 @@ class RecorderSession(private val service: RecorderService, private val schedule
         }
     }
 
-    private val disposables = DisposableMap()
+    private val disposables = CompositeDisposable()
 
     private val aggregator = BITalinoFrameMapper()
 
     val recorders = HashMap<BluetoothDevice, Recorder>()
 
     fun create() {
-        disposables["commands"] = service.bus.commands.subscribeOn(scheduler)
+        disposables.add(service.bus.commands.subscribeOn(scheduler)
                 .subscribe {
                     when (it) {
                         is RecorderBus.StartRecording -> startRecording()
                         is RecorderBus.StopRecording -> stopRecording()
                     }
-                }
-        disposables["events"] = service.bus.events.subscribeOn(scheduler)
+                })
+        disposables.add(service.bus.events.subscribeOn(scheduler)
                 .subscribe {
                     when (it) {
                         is RecorderBus.RecorderStateChanged -> updateState(it)
                         is RecorderBus.SelectedDevice -> createRecorder(it.device)
                         is RecorderBus.PhaseSelected -> aggregator.phase.set(it.phase)
                     }
-                }
+                })
         Log.d(TAG, "created")
     }
 

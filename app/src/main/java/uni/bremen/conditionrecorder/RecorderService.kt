@@ -9,6 +9,7 @@ import android.os.IBinder
 import android.os.Looper
 import io.reactivex.Scheduler
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import java.util.*
 
@@ -19,7 +20,7 @@ class RecorderService : Service() {
 
     private val binder = Binder()
 
-    private val disposables = DisposableMap()
+    private val disposables = CompositeDisposable()
 
     private val backgroundThread = object : BackgroundThread(RecorderService.TAG) {
 
@@ -52,13 +53,13 @@ class RecorderService : Service() {
 
 
     private fun subscribe(scheduler: Scheduler) {
-        disposables["commands"] = bus.commands.subscribeOn(scheduler)
+        disposables.add(bus.commands.subscribeOn(scheduler)
                 .subscribe {
                     when (it) {
                         is RecorderBus.CreateSession -> createSession(scheduler)
                         is RecorderBus.DestroySession -> destroySession()
                     }
-                }
+                })
     }
 
     private fun createSession(scheduler: Scheduler) {
@@ -85,7 +86,7 @@ class RecorderService : Service() {
 
         private var service: RecorderService? = null
 
-        private val disposables = LinkedList<Disposable>()
+        private val disposables = CompositeDisposable()
 
         private val queue = LinkedList<(connection: Connection, service: RecorderService) -> Any>()
 
@@ -101,10 +102,7 @@ class RecorderService : Service() {
 
             queue.clear()
 
-            with(disposables) {
-                forEach { it.dispose() }
-                clear()
-            }
+            disposables.dispose()
         }
 
         fun whenConnected(listener: (connection: Connection, service: RecorderService) -> Any) {
