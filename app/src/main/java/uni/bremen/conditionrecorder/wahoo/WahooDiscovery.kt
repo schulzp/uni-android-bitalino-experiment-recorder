@@ -1,14 +1,14 @@
 package uni.bremen.conditionrecorder.wahoo
 
-import android.bluetooth.BluetoothDevice
 import android.content.Context
+import android.os.Handler
 import android.util.Log
 import com.wahoofitness.connector.HardwareConnector
 import com.wahoofitness.connector.HardwareConnectorTypes
 import com.wahoofitness.connector.conn.connections.params.BTLEConnectionParams
 import com.wahoofitness.connector.conn.connections.params.ConnectionParams
 import com.wahoofitness.connector.listeners.discovery.DiscoveryListener
-import io.reactivex.Observable
+import io.reactivex.Scheduler
 import uni.bremen.conditionrecorder.BluetoothDeviceDiscovery
 
 class WahooDiscovery(context: Context) : BluetoothDeviceDiscovery() {
@@ -26,29 +26,20 @@ class WahooDiscovery(context: Context) : BluetoothDeviceDiscovery() {
         override fun onDeviceDiscovered(connectionParams: ConnectionParams) {
             if (connectionParams is BTLEConnectionParams) {
                 Log.d(TAG, "discovered wahoo device: $connectionParams")
-                devices.onNext(connectionParams.bluetoothDevice)
+                onDevice(connectionParams.bluetoothDevice)
             }
         }
 
     }
 
-    override fun start(duration:Long): Observable<BluetoothDevice> {
-        val subject = super.start(duration)
-
-        subject.doFinally {
-            connector.stopDiscovery(HardwareConnectorTypes.NetworkType.BTLE)
-        }
-
+    override fun onStart() {
         connector.startDiscovery(
                 HardwareConnectorTypes.SensorType.HEARTRATE,
                 HardwareConnectorTypes.NetworkType.BTLE, listener)
-
-        return subject
     }
 
-    override fun destroy() {
-        super.destroy()
-
+    override fun onComplete() {
+        connector.stopDiscovery(HardwareConnectorTypes.NetworkType.BTLE)
         connector.shutdown()
     }
 

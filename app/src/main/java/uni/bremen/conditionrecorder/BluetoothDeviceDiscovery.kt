@@ -1,43 +1,33 @@
 package uni.bremen.conditionrecorder
 
 import android.bluetooth.BluetoothDevice
-import android.os.Handler
-import android.util.Log
-import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 
 
-abstract class BluetoothDeviceDiscovery {
+abstract class BluetoothDeviceDiscovery() {
 
-    private val handler = Handler()
-
-    protected val devices: PublishSubject<BluetoothDevice> = PublishSubject.create<BluetoothDevice>()
+    private val devices: PublishSubject<BluetoothDevice> = PublishSubject.create<BluetoothDevice>()
 
     private var started = false
 
+    val discovery = devices.doOnSubscribe { _ ->
+        if (!started) {
+            started = true
+            onStart()
+        }
+    }.doFinally(::onComplete)
+
     fun isScanning(): Boolean = started && !devices.hasComplete()
 
-    open fun start(duration:Long = SCAN_DURATION): Observable<BluetoothDevice> {
-        if (started) throw IllegalStateException("already started")
+    fun stop() { devices.onComplete() }
 
-        started = true
-
-        devices.doFinally { Log.d("BTD", "discovery ended") }
-
-        if (duration > 0) {
-            handler.postDelayed(this::stop, duration)
-        }
-
-        return devices
+    protected fun onDevice(device: BluetoothDevice) {
+        devices.onNext(device)
     }
 
-    open fun stop() {
-        devices.onComplete()
-    }
+    protected abstract fun onStart()
 
-    open fun destroy() {
-
-    }
+    protected abstract fun onComplete()
 
     companion object {
 

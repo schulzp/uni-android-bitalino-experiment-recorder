@@ -5,8 +5,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.os.HandlerThread
 import android.os.IBinder
+import android.os.Looper
 import io.reactivex.Scheduler
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -21,7 +21,13 @@ class RecorderService : Service() {
 
     private val disposables = DisposableMap()
 
-    private var handlerThread: HandlerThread? = null
+    private val backgroundThread = object : BackgroundThread(RecorderService.TAG) {
+
+        override fun onLooperPrepared(looper:Looper) {
+            subscribe(AndroidSchedulers.from(looper))
+        }
+
+    }
 
     private var session: RecorderSession? = null
 
@@ -30,7 +36,7 @@ class RecorderService : Service() {
     override fun onCreate() {
         super.onCreate()
 
-        startThread()
+        backgroundThread.start()
     }
 
     override fun onDestroy() {
@@ -40,26 +46,10 @@ class RecorderService : Service() {
 
         unsubscribe()
 
-        stopThread()
+        backgroundThread.stop()
     }
 
 
-    @Synchronized
-    private fun startThread() {
-        if (handlerThread == null) {
-            handlerThread = BackgroundThread(TAG)
-            handlerThread?.start()
-        }
-    }
-
-    @Synchronized
-    private fun stopThread() {
-        if (handlerThread != null) {
-            val moribund = handlerThread
-            handlerThread = null
-            moribund?.interrupt()
-        }
-    }
 
     private fun subscribe(scheduler: Scheduler) {
         disposables["commands"] = bus.commands.subscribeOn(scheduler)
@@ -88,16 +78,6 @@ class RecorderService : Service() {
     inner class Binder : android.os.Binder() {
 
         fun getService(): RecorderService = this@RecorderService
-
-    }
-
-    inner class BackgroundThread(tag: String) : HandlerThread(tag) {
-
-        override fun onLooperPrepared() {
-            val scheduler = AndroidSchedulers.from(looper)
-
-            subscribe(scheduler)
-        }
 
     }
 

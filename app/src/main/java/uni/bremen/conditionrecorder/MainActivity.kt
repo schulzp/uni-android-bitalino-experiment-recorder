@@ -42,7 +42,6 @@ class MainActivity : AppCompatActivity(), ContentFragmentLifecycle {
         checkRequiredFeatures()
 
         setContent()
-
     }
 
     override fun onResume() {
@@ -214,7 +213,7 @@ class MainActivity : AppCompatActivity(), ContentFragmentLifecycle {
                 true
             }
 
-            setContent(Content.RECORDINGS)
+            setContent(Content.DEVICES)
         }
     }
 

@@ -22,6 +22,8 @@ import uni.bremen.conditionrecorder.wahoo.WahooRecorder
 
 class RecorderDeviceListFragment : Fragment() {
 
+    private val handler = Handler()
+
     private lateinit var adapter:DeviceListAdapter
 
     private lateinit var recorderServiceConnection:RecorderService.Connection
@@ -107,21 +109,21 @@ class RecorderDeviceListFragment : Fragment() {
 
         val discovery = WahooDiscovery(service)
         var disposable: Disposable? = null
-        disposable = discovery.start()
+        disposable = discovery.discovery
                 .filter { it.address == WahooRecorder.DEFAULT_ADDRESS }
                 .doFinally {
                     bluetoothAdapter.bondedDevices
                             .filter { it.address == "20:16:02:14:75:37" }
                             .forEach { service.bus.events.onNext(RecorderBus.SelectedDevice(it)) }
-
                     disposable?.dispose()
-                    discovery.destroy()
                 }
-                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
                     discovery.stop()
                     service.bus.events.onNext(RecorderBus.SelectedDevice(it))
                 }
+
+        handler.postDelayed(discovery::stop, 10000)
 
         return
     }
