@@ -44,6 +44,8 @@ import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.fragment_recorder_video.*
+import uni.bremen.conditionrecorder.service.BindableServiceConnection
+import uni.bremen.conditionrecorder.service.RecorderService
 import java.io.IOException
 import java.util.Collections
 import java.util.concurrent.Semaphore
@@ -99,12 +101,11 @@ class RecorderVideoFragment : Fragment(),
      */
     private var isRecordingVideo = false
         set(value) {
-            recorderServiceConnection.whenConnected { _, service ->
+            recorderServiceConnection.service.subscribe { service ->
                 service.bus.events.onNext(if (value)
                                     RecorderBus.VideoRecordingStarted()
                                 else
                                     RecorderBus.VideoRecordingStopped(nextVideoAbsolutePath ?: "unknown"))
-                Unit
             }
         }
 
@@ -167,12 +168,13 @@ class RecorderVideoFragment : Fragment(),
 
     private var mediaRecorder: MediaRecorder? = null
 
-    private lateinit var recorderServiceConnection:RecorderService.Connection
+    private lateinit var recorderServiceConnection: BindableServiceConnection<RecorderService>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        recorderServiceConnection = RecorderService.bind(activity!!) { _, service ->
+        recorderServiceConnection = RecorderService.bind(activity!!)
+        recorderServiceConnection.service.subscribe { service ->
             service.bus.commands.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
                 when (it) {
                     is RecorderBus.StartRecording -> startRecordingVideo()
@@ -185,7 +187,7 @@ class RecorderVideoFragment : Fragment(),
     override fun onDestroy() {
         super.onDestroy()
 
-        recorderServiceConnection.close(activity!!)
+        recorderServiceConnection.close()
     }
 
     override fun onCreateView(inflater: LayoutInflater,

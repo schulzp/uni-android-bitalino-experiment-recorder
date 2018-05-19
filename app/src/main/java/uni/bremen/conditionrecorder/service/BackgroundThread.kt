@@ -1,7 +1,6 @@
-package uni.bremen.conditionrecorder
+package uni.bremen.conditionrecorder.service
 
 import android.os.HandlerThread
-import android.os.Looper
 
 open class BackgroundThread(private val tag: String) {
 
@@ -15,7 +14,7 @@ open class BackgroundThread(private val tag: String) {
                 override fun onLooperPrepared() {
                     super.onLooperPrepared()
 
-                    this@BackgroundThread.onLooperPrepared(looper)
+                    this@BackgroundThread.onHandlerThreadPrepared(this)
                 }
 
             }
@@ -32,7 +31,7 @@ open class BackgroundThread(private val tag: String) {
         }
     }
 
-    open fun onLooperPrepared(looper: Looper) {
+    open fun onHandlerThreadPrepared(thread: HandlerThread) {
 
     }
 

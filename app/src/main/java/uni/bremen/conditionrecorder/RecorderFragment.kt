@@ -6,15 +6,18 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import io.reactivex.android.schedulers.AndroidSchedulers
+import uni.bremen.conditionrecorder.service.BindableServiceConnection
+import uni.bremen.conditionrecorder.service.RecorderService
 
 
 class RecorderFragment : ContentFragment(Content.RECORDER, R.string.recorder), Fullscreen {
 
-    private lateinit var recorderServiceConnection:RecorderService.Connection
+    private lateinit var recorderServiceConnection: BindableServiceConnection<RecorderService>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        recorderServiceConnection = RecorderService.bind(activity!!) { _, service ->
+        recorderServiceConnection = RecorderService.bind(activity!!)
+        recorderServiceConnection.service.subscribe { service ->
             service.bus.commands.onNext(RecorderBus.CreateSession())
 
             service.bus.recordingStopped.subscribeOn(AndroidSchedulers.mainThread()).subscribe { event ->
@@ -32,10 +35,11 @@ class RecorderFragment : ContentFragment(Content.RECORDER, R.string.recorder), F
     override fun onDestroy() {
         super.onDestroy()
 
-        recorderServiceConnection.whenConnected { _, service ->
+        recorderServiceConnection.service.subscribe { service ->
             service.bus.commands.onNext(RecorderBus.DestroySession())
         }
-        recorderServiceConnection.close(activity!!)
+
+        recorderServiceConnection.close()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
@@ -63,9 +67,5 @@ class RecorderFragment : ContentFragment(Content.RECORDER, R.string.recorder), F
     }
 
     private fun showToast(message : String) = Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
-
-    companion object {
-        fun newInstance():RecorderFragment = RecorderFragment()
-    }
 
 }

@@ -14,8 +14,7 @@ import info.plux.pluxapi.bitalino.bth.OnBITalinoDataAvailable
 import io.reactivex.subjects.PublishSubject
 import uni.bremen.conditionrecorder.Recorder
 import uni.bremen.conditionrecorder.RecorderBus
-import uni.bremen.conditionrecorder.RecorderDeviceFragment
-import uni.bremen.conditionrecorder.RecorderService
+import uni.bremen.conditionrecorder.service.RecorderService
 
 class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService) : Recorder {
 
@@ -69,7 +68,7 @@ class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService
                 if (intent.hasExtra(Constants.EXTRA_COMMAND_REPLY) && intent.getParcelableExtra<Parcelable>(Constants.EXTRA_COMMAND_REPLY) != null) {
                     val parcelable = intent.getParcelableExtra<Parcelable>(Constants.EXTRA_COMMAND_REPLY)
                     if (parcelable.javaClass == BITalinoState::class.java) {
-                        Log.d(RecorderDeviceFragment.TAG, (parcelable as BITalinoState).toString())
+                        Log.d(TAG, (parcelable as BITalinoState).toString())
                     } else if (parcelable.javaClass == BITalinoDescription::class.java) {
                         var isBITalino2 = (parcelable as BITalinoDescription).isBITalino2
                         Log.d(RecorderService.TAG, "isBITalino2: " + isBITalino2 + "; FwVersion: " + parcelable.fwVersion.toString())

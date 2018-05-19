@@ -63,7 +63,7 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
         requestLocationPermissions()
 
-        discoveryProviders.add({ BITalinoDiscovery(activity!!) })
+        //discoveryProviders.add({ BITalinoDiscovery(activity!!) })
         discoveryProviders.add({ WahooDiscovery(activity!!) })
     }
 
@@ -204,7 +204,7 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
     private fun isScanning(): Boolean = discoveries.any { it.isScanning() }
 
-    private val scanDuration = 10000L
+    private val scanDuration = 20000L
 
     private fun scanDevice(scan: Boolean) {
         if (scan) {

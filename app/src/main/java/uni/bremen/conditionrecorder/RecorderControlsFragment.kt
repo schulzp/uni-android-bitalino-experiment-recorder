@@ -5,10 +5,11 @@ import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ToggleButton
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.fragment_recorder_controls.*
+import uni.bremen.conditionrecorder.service.BindableServiceConnection
+import uni.bremen.conditionrecorder.service.RecorderService
 
 class RecorderControlsFragment : Fragment() {
 
@@ -16,12 +17,13 @@ class RecorderControlsFragment : Fragment() {
 
     private val phaseButtons = ArrayList<ToggleButton>()
 
-    private lateinit var recorderServiceConnection:RecorderService.Connection
+    private lateinit var recorderServiceConnection: BindableServiceConnection<RecorderService>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        recorderServiceConnection = RecorderService.bind(activity!!) { _, service ->
+        recorderServiceConnection = RecorderService.bind(activity!!)
+        recorderServiceConnection.service.subscribe { service ->
             service.bus.recorderSession.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
                 when(it.state) {
                     RecorderSession.State.NOT_READY -> {
@@ -49,7 +51,7 @@ class RecorderControlsFragment : Fragment() {
     override fun onDestroy() {
         super.onDestroy()
 
-        recorderServiceConnection.close(activity!!)
+        recorderServiceConnection.close()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
@@ -63,11 +65,11 @@ class RecorderControlsFragment : Fragment() {
         recordButton.setOnClickListener {
                     if (recording)
                         recorderServiceConnection
-                                .whenConnected { _, service ->
+                                .service.subscribe { service ->
                                     service.bus.commands.onNext(RecorderBus.StopRecording()) }
                     else
                         recorderServiceConnection
-                                .whenConnected { _, service ->
+                                .service.subscribe { service ->
                                     service.bus.commands.onNext(RecorderBus.StartRecording()) }
         }
     }
@@ -90,7 +92,7 @@ class RecorderControlsFragment : Fragment() {
 
             if (next < phaseButtons.size) phaseButtons[next].isEnabled = true
 
-            recorderServiceConnection.whenConnected { _, service ->
+            recorderServiceConnection.service.subscribe { service ->
                 service.bus.events.onNext(RecorderBus.PhaseSelected(phase))
             }
         }

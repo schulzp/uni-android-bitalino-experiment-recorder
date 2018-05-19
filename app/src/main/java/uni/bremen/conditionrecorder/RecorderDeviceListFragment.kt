@@ -16,6 +16,8 @@ import android.view.ViewGroup
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.fragment_recorder_device_list.*
+import uni.bremen.conditionrecorder.service.BindableServiceConnection
+import uni.bremen.conditionrecorder.service.RecorderService
 import uni.bremen.conditionrecorder.wahoo.WahooDiscovery
 import uni.bremen.conditionrecorder.wahoo.WahooRecorder
 
@@ -26,7 +28,7 @@ class RecorderDeviceListFragment : Fragment() {
 
     private lateinit var adapter:DeviceListAdapter
 
-    private lateinit var recorderServiceConnection:RecorderService.Connection
+    private lateinit var recorderServiceConnection: BindableServiceConnection<RecorderService>
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
             : View? = inflater.inflate(R.layout.fragment_recorder_device_list, container, false)
@@ -40,15 +42,12 @@ class RecorderDeviceListFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        recorderServiceConnection = RecorderService.bind(context!!) { _, service ->
-            val scheduler = AndroidSchedulers.mainThread()
+        recorderServiceConnection = RecorderService.bind(context!!)
+        recorderServiceConnection.service.subscribe { service ->
+            val selected = service.bus.deviceSelected.subscribe { selected -> addDevice(selected.device) }
+            val updated = service.bus.deviceStateChange.subscribe { change -> updateDevice(change.device, change.state) }
 
-            val selected = service.bus.deviceSelected.subscribeOn(scheduler)
-                    .subscribe { selected -> addDevice(selected.device) }
-            val updated = service.bus.deviceStateChange.subscribeOn(scheduler)
-                    .subscribe { change -> updateDevice(change.device, change.state) }
-
-            Handler().postDelayed({ addDefaultDevices(service) }, 100)
+            addDefaultDevices(service)
 
             listOf(selected, updated)
         }
@@ -61,7 +60,7 @@ class RecorderDeviceListFragment : Fragment() {
     override fun onPause() {
         super.onPause()
 
-        recorderServiceConnection.close(context!!)
+        recorderServiceConnection.close()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -70,7 +69,7 @@ class RecorderDeviceListFragment : Fragment() {
         if (requestCode == INTENT_REQUEST_PICK_DEVICE && resultCode == Activity.RESULT_OK) {
             var device = data?.extras?.getParcelable<BluetoothDevice>(EXTRA_DEVICE)
             if (device != null) {
-                recorderServiceConnection.whenConnected { _, service ->
+                recorderServiceConnection.service.subscribe { service ->
                     service.bus.events.onNext(RecorderBus.SelectedDevice(device))
                 }
             }

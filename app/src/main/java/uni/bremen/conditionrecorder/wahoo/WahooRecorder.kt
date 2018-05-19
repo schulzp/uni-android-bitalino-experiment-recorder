@@ -13,7 +13,7 @@ import com.wahoofitness.connector.conn.connections.params.BTLEConnectionParams
 import io.reactivex.subjects.PublishSubject
 import uni.bremen.conditionrecorder.Recorder
 import uni.bremen.conditionrecorder.RecorderBus
-import uni.bremen.conditionrecorder.RecorderService
+import uni.bremen.conditionrecorder.service.RecorderService
 
 
 class WahooRecorder(private val device:BluetoothDevice, private val service: RecorderService) : Recorder {

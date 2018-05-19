@@ -9,6 +9,7 @@ import io.reactivex.disposables.Disposable
 import uni.bremen.conditionrecorder.bitalino.BITalinoFrameMapper
 import uni.bremen.conditionrecorder.bitalino.BITalinoRecorder
 import uni.bremen.conditionrecorder.io.DataWriter
+import uni.bremen.conditionrecorder.service.RecorderService
 import uni.bremen.conditionrecorder.wahoo.WahooRecorder
 import java.io.File
 import java.util.*
@@ -37,14 +38,14 @@ class RecorderSession(private val service: RecorderService, private val schedule
     val recorders = HashMap<BluetoothDevice, Recorder>()
 
     fun create() {
-        disposables.add(service.bus.commands.subscribeOn(scheduler)
+        disposables.add(service.bus.commands.observeOn(scheduler).subscribeOn(scheduler)
                 .subscribe {
                     when (it) {
                         is RecorderBus.StartRecording -> startRecording()
                         is RecorderBus.StopRecording -> stopRecording()
                     }
                 })
-        disposables.add(service.bus.events.subscribeOn(scheduler)
+        disposables.add(service.bus.events.observeOn(scheduler).subscribeOn(scheduler)
                 .subscribe {
                     when (it) {
                         is RecorderBus.RecorderStateChanged -> updateState(it)
@@ -88,6 +89,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
                         disposable?.dispose()
                         writer.close()
                     }
+                    .observeOn(scheduler)
                     .subscribeOn(scheduler)
                     .map(aggregator::map)
                     .subscribe(writer::write)
@@ -99,6 +101,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
                     .doFinally {
                         disposable?.dispose()
                     }
+                    .observeOn(scheduler)
                     .subscribeOn(scheduler)
                     .subscribe { data ->
                         Log.v(TAG, "heart rate data: $data")

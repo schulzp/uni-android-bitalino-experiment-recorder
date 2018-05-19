@@ -1,6 +1,7 @@
 package uni.bremen.conditionrecorder
 
 import android.bluetooth.BluetoothDevice
+import android.util.Log
 import io.reactivex.subjects.PublishSubject
 
 
@@ -19,7 +20,7 @@ abstract class BluetoothDeviceDiscovery() {
 
     fun isScanning(): Boolean = started && !devices.hasComplete()
 
-    fun stop() { devices.onComplete() }
+    fun stop() { if (!started) Log.w("BTDD", "not started yet"); devices.onComplete() }
 
     protected fun onDevice(device: BluetoothDevice) {
         devices.onNext(device)
