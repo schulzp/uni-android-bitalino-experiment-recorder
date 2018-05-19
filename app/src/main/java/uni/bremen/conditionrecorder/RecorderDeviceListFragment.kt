@@ -13,10 +13,13 @@ import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.wahoofitness.connector.capabilities.Battery
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.fragment_recorder_device_list.*
+import uni.bremen.conditionrecorder.rx.onMainThread
 import uni.bremen.conditionrecorder.service.BindableServiceConnection
+import uni.bremen.conditionrecorder.service.DiscoveryService
 import uni.bremen.conditionrecorder.service.RecorderService
 import uni.bremen.conditionrecorder.wahoo.WahooDiscovery
 import uni.bremen.conditionrecorder.wahoo.WahooRecorder
@@ -24,11 +27,10 @@ import uni.bremen.conditionrecorder.wahoo.WahooRecorder
 
 class RecorderDeviceListFragment : Fragment() {
 
-    private val handler = Handler()
-
     private lateinit var adapter:DeviceListAdapter
 
     private lateinit var recorderServiceConnection: BindableServiceConnection<RecorderService>
+    private lateinit var discoveryServiceConnection: BindableServiceConnection<DiscoveryService>
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?)
             : View? = inflater.inflate(R.layout.fragment_recorder_device_list, container, false)
@@ -42,18 +44,27 @@ class RecorderDeviceListFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        recorderServiceConnection = RecorderService.bind(context!!)
-        recorderServiceConnection.service.subscribe { service ->
-            val selected = service.bus.deviceSelected.subscribe { selected -> addDevice(selected.device) }
-            val updated = service.bus.deviceStateChange.subscribe { change -> updateDevice(change.device, change.state) }
+        recorderServiceConnection = RecorderService.bind(activity!!)
+        recorderServiceConnection.service.subscribe { recorderService ->
+            recorderService.bus.deviceSelected
+                    .compose(onMainThread())
+                    .map(RecorderBus.SelectedDevice::device)
+                    .subscribe(this::addDevice)
+            recorderService.bus.deviceStateChange
+                    .compose(onMainThread())
+                    .subscribe { change -> updateDevice(change.device, change.state, change.batteryLevel) }
 
-            addDefaultDevices(service)
-
-            listOf(selected, updated)
+            discoveryServiceConnection = DiscoveryService.bind(activity!!)
+            discoveryServiceConnection.service.subscribe { discoveryService ->
+                discoveryService.start()
+                        .compose(onMainThread())
+                        .map { RecorderBus.SelectedDevice(it) }
+                        .subscribe(recorderService.bus.events::onNext)
+            }
         }
 
         empty.setOnClickListener {
-            startActivityForResult(MainActivity.createPickDeviceIntent(context!!), INTENT_REQUEST_PICK_DEVICE)
+            startActivityForResult(MainActivity.createPickDeviceIntent(activity!!), INTENT_REQUEST_PICK_DEVICE)
         }
     }
 
@@ -61,6 +72,7 @@ class RecorderDeviceListFragment : Fragment() {
         super.onPause()
 
         recorderServiceConnection.close()
+        discoveryServiceConnection.close()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -81,11 +93,12 @@ class RecorderDeviceListFragment : Fragment() {
         adapter.notifyDataSetChanged()
     }
 
-    private fun updateDevice(device: BluetoothDevice, state:Any?) {
+    private fun updateDevice(device: BluetoothDevice, state:Recorder.State, batteryLevel: Recorder.BatteryLevel) {
         val statefulBluetoothDevice = adapter.find(device)
         if (statefulBluetoothDevice != null) {
-            if (statefulBluetoothDevice is DeviceListAdapter.RecorderBluetoothDevice && state is Recorder.State) {
+            if (statefulBluetoothDevice is DeviceListAdapter.RecorderBluetoothDevice) {
                 statefulBluetoothDevice.state = state
+                statefulBluetoothDevice.batteryLevel = batteryLevel
             }
 
             val position = adapter.indexOf(statefulBluetoothDevice)
@@ -99,32 +112,6 @@ class RecorderDeviceListFragment : Fragment() {
     private fun setupList() {
         adapter = DeviceListAdapter(activity!!)
         RecycleViewHelper.verticalList(list, activity!!).adapter = adapter
-    }
-
-    private fun addDefaultDevices(service: RecorderService) {
-        val bluetoothManager = service.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-        val bluetoothAdapter = bluetoothManager?.adapter
-                ?: throw RequiredFeatures.MissingFeatureException(PackageManager.FEATURE_BLUETOOTH)
-
-        val discovery = WahooDiscovery(service)
-        var disposable: Disposable? = null
-        disposable = discovery.devices
-                .filter { it.address == WahooRecorder.DEFAULT_ADDRESS }
-                .doFinally {
-                    bluetoothAdapter.bondedDevices
-                            .filter { it.address == "20:16:02:14:75:37" }
-                            .forEach { service.bus.events.onNext(RecorderBus.SelectedDevice(it)) }
-                    disposable?.dispose()
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe {
-                    discovery.stop()
-                    service.bus.events.onNext(RecorderBus.SelectedDevice(it))
-                }
-
-        handler.postDelayed(discovery::stop, 10000)
-
-        return
     }
 
 }

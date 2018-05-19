@@ -1,6 +1,12 @@
 package uni.bremen.conditionrecorder
 
-interface Recorder {
+abstract class Recorder {
+
+    var state:State = State.DISCONNECTED
+    protected set(value) { field = value }
+
+    var batteryLevel = Recorder.BatteryLevel.UNKNOWN
+    protected set(value) { field = value }
 
     enum class State {
 
@@ -16,14 +22,18 @@ interface Recorder {
 
     }
 
-    fun getState(): State
+    enum class BatteryLevel {
 
-    fun connect()
+        CRITICAL, LOW, GOOD, UNKNOWN
 
-    fun disconnect()
+    }
 
-    fun start()
+    abstract fun connect()
 
-    fun stop()
+    abstract fun disconnect()
+
+    abstract fun start()
+
+    abstract fun stop()
 
 }

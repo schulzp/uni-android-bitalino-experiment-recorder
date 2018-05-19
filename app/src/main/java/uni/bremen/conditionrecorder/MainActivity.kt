@@ -213,7 +213,7 @@ class MainActivity : AppCompatActivity(), ContentFragmentLifecycle {
                 true
             }
 
-            setContent(Content.DEVICES)
+            setContent(Content.RECORDINGS)
         }
     }
 

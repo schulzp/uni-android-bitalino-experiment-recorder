@@ -16,7 +16,7 @@ import uni.bremen.conditionrecorder.Recorder
 import uni.bremen.conditionrecorder.RecorderBus
 import uni.bremen.conditionrecorder.service.RecorderService
 
-class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService) : Recorder {
+class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService) : Recorder() {
 
     var frames: PublishSubject<BITalinoFrame> = createObservable()
         private set(value) {
@@ -28,8 +28,6 @@ class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService
     private val dataReceiver = OnBITalinoDataAvailable { frame -> frames.onNext(frame) }
 
     private var registeredReceiver = false
-
-    private var state = Recorder.State.DISCONNECTED
 
     private val updateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -80,10 +78,6 @@ class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService
         fun handleFrame(frame: BITalinoFrame) {
             Log.d(RecorderService.TAG, "frame: $frame")
         }
-    }
-
-    override fun getState(): Recorder.State {
-        return state
     }
 
     override fun connect() {

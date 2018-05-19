@@ -6,8 +6,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ToggleButton
+import io.reactivex.ObservableTransformer
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.fragment_recorder_controls.*
+import uni.bremen.conditionrecorder.rx.onMainThread
 import uni.bremen.conditionrecorder.service.BindableServiceConnection
 import uni.bremen.conditionrecorder.service.RecorderService
 
@@ -24,7 +26,7 @@ class RecorderControlsFragment : Fragment() {
 
         recorderServiceConnection = RecorderService.bind(activity!!)
         recorderServiceConnection.service.subscribe { service ->
-            service.bus.recorderSession.subscribeOn(AndroidSchedulers.mainThread()).subscribe {
+            service.bus.recorderSession.observeOn(AndroidSchedulers.mainThread()).subscribe {
                 when(it.state) {
                     RecorderSession.State.NOT_READY -> {
                         if (!recording) {

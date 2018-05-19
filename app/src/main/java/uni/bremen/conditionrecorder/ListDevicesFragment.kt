@@ -24,9 +24,9 @@ class ListDevicesFragment : ContentFragment(Content.DEVICES, R.string.devices) {
 
     private lateinit var discoveryServiceConnection: BindableServiceConnection<DiscoveryService>
 
-    private val onItemClickListener = object:GenericRecycleViewAdapter.OnItemClickListener<DeviceListAdapter.StatefulBluetoothDevice<*>> {
+    private val onItemClickListener = object:GenericRecycleViewAdapter.OnItemClickListener<DeviceListAdapter.StatefulBluetoothDevice> {
 
-        override fun onItemSelected(item: DeviceListAdapter.StatefulBluetoothDevice<*>): Boolean {
+        override fun onItemSelected(item: DeviceListAdapter.StatefulBluetoothDevice): Boolean {
             if (scanning) {
                 scanDevice(false)
             }

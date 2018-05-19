@@ -10,7 +10,7 @@ import info.plux.pluxapi.Constants
 import java.util.*
 
 
-class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDevice<*>> = LinkedList()) : GenericRecycleViewAdapter<DeviceListAdapter.StatefulBluetoothDevice<*>, String, DeviceListAdapter.DeviceViewHolder>(context, devices) {
+class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDevice> = LinkedList()) : GenericRecycleViewAdapter<DeviceListAdapter.StatefulBluetoothDevice, String, DeviceListAdapter.DeviceViewHolder>(context, devices) {
 
     init {
         setHasStableIds(true)
@@ -22,7 +22,7 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
 
     override fun getItemViewResourceId(viewType: Int): Int = R.layout.item_device
 
-    override fun onBindViewHolder(holder: DeviceViewHolder, item:StatefulBluetoothDevice<*>, position: Int) {
+    override fun onBindViewHolder(holder: DeviceViewHolder, item:StatefulBluetoothDevice, position: Int) {
         with(holder) {
             name.text = item.device.name ?: "BITalino"
             address.text = item.device.address
@@ -31,15 +31,15 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
         }
     }
 
-    fun indexOf(device: StatefulBluetoothDevice<*>):Int {
+    fun indexOf(device: StatefulBluetoothDevice):Int {
         return items.indexOf(device)
     }
 
-    fun find(device: BluetoothDevice) : DeviceListAdapter.StatefulBluetoothDevice<*>? {
+    fun find(device: BluetoothDevice) : DeviceListAdapter.StatefulBluetoothDevice? {
         return items.find { statefulBluetoothDevice -> statefulBluetoothDevice.device == device }
     }
 
-    override fun add(item: StatefulBluetoothDevice<*>) {
+    override fun add(item: StatefulBluetoothDevice) {
         super.add(item)
 
         item.position = items.size - 1
@@ -70,19 +70,21 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
 
     class DeviceViewHolder(view:View, val name: TextView, val address: TextView, val state: TextView) : GenericRecycleViewAdapter.GenericViewHolder<String>(view, GenericRecycleViewAdapter.GenericItemDetails("", -1))
 
-    interface StatefulBluetoothDevice<S> {
+    interface StatefulBluetoothDevice {
         val device: BluetoothDevice
         val type:Int
         var position:Int
-        var state:S
+        var state:Recorder.State
+        var batteryLevel:Recorder.BatteryLevel
 
         fun update(deviceViewHolder: DeviceViewHolder, context: Context)
     }
 
     class RecorderBluetoothDevice(
             override val device: BluetoothDevice,
-            override var state:Recorder.State = Recorder.State.DISCONNECTED)
-        : StatefulBluetoothDevice<Recorder.State> {
+            override var state:Recorder.State = Recorder.State.DISCONNECTED,
+            override var batteryLevel: Recorder.BatteryLevel = Recorder.BatteryLevel.UNKNOWN)
+        : StatefulBluetoothDevice {
 
         override val type = 0
 
@@ -98,17 +100,25 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
 
         override fun update(deviceViewHolder: DeviceViewHolder, context: Context) {
             with(deviceViewHolder) {
-                val color = context.getColor(when(this@RecorderBluetoothDevice.state) {
+                val connectionColor = context.getColor(when(this@RecorderBluetoothDevice.state) {
                     Recorder.State.CONNECTED -> R.color.deviceStatusConnected
                     Constants.States.DISCONNECTED -> R.color.deviceStatusDisconnected
                     else -> R.color.accent
                 })
 
-                state.compoundDrawables[0]?.setColorFilter(color, PorterDuff.Mode.MULTIPLY)
+                state.compoundDrawables[0]?.setColorFilter(connectionColor, PorterDuff.Mode.MULTIPLY)
                 state.text = this@RecorderBluetoothDevice.state?.name
+
+                val batteryColor = context.getColor(when(this@RecorderBluetoothDevice.batteryLevel) {
+                    Recorder.BatteryLevel.UNKNOWN -> R.color.batteryUnkown
+                    Recorder.BatteryLevel.CRITICAL -> R.color.batteryCritical
+                    Recorder.BatteryLevel.LOW -> R.color.batteryLow
+                    Recorder.BatteryLevel.GOOD -> R.color.batteryGood
+                })
+
+                name.compoundDrawables[2]?.setColorFilter(batteryColor, PorterDuff.Mode.MULTIPLY)
             }
         }
-
     }
 
 }

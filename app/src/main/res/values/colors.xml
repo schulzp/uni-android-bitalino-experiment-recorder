@@ -14,4 +14,9 @@
     <color name="deviceStatusConnected">@color/primary</color>
     <color name="deviceStatus">#555555</color>
     <color name="separator">#cccccc</color>
+
+    <color name="batteryUnkown">@color/deviceStatusDisconnected</color>
+    <color name="batteryCritical">#ff0000</color>
+    <color name="batteryLow">@color/accent</color>
+    <color name="batteryGood">@color/primary</color>
 </resources>

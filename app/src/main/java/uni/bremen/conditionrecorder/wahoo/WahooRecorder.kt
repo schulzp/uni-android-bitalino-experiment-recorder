@@ -1,10 +1,12 @@
 package uni.bremen.conditionrecorder.wahoo
 
 import android.bluetooth.BluetoothDevice
+import android.os.Handler
 import android.util.Log
 import com.wahoofitness.connector.HardwareConnector
 import com.wahoofitness.connector.HardwareConnectorEnums
 import com.wahoofitness.connector.HardwareConnectorTypes
+import com.wahoofitness.connector.capabilities.Battery
 import com.wahoofitness.connector.capabilities.Capability
 import com.wahoofitness.connector.capabilities.Capability.CapabilityType
 import com.wahoofitness.connector.capabilities.Heartrate
@@ -16,7 +18,8 @@ import uni.bremen.conditionrecorder.RecorderBus
 import uni.bremen.conditionrecorder.service.RecorderService
 
 
-class WahooRecorder(private val device:BluetoothDevice, private val service: RecorderService) : Recorder {
+
+class WahooRecorder(private val device:BluetoothDevice, private val service: RecorderService) : Recorder() {
 
     var data: PublishSubject<Heartrate.Data> = createObservable()
         private set(value) {
@@ -27,16 +30,18 @@ class WahooRecorder(private val device:BluetoothDevice, private val service: Rec
 
     private var connector = HardwareConnector(service, callback)
 
-    private var state: Recorder.State = Recorder.State.DISCONNECTED
-
     private var connection: SensorConnection? = null
 
     private val connectionListener = object: SensorConnection.Listener {
 
         override fun onSensorConnectionStateChanged(sensorConnection: SensorConnection, state: HardwareConnectorEnums.SensorConnectionState) {
             updateState(when(state) {
-                HardwareConnectorEnums.SensorConnectionState.CONNECTING,
-                HardwareConnectorEnums.SensorConnectionState.CONNECTED -> Recorder.State.CONNECTING
+                HardwareConnectorEnums.SensorConnectionState.CONNECTING -> Recorder.State.CONNECTING
+                HardwareConnectorEnums.SensorConnectionState.CONNECTED ->
+                    if (state == Recorder.State.CONNECTED)
+                        Recorder.State.CONNECTED
+                    else
+                        Recorder.State.CONNECTING
                 else -> Recorder.State.DISCONNECTED
             })
         }
@@ -48,11 +53,16 @@ class WahooRecorder(private val device:BluetoothDevice, private val service: Rec
         override fun onNewCapabilityDetected(sensorConnection: SensorConnection, capabilityType: Capability.CapabilityType) {
             Log.i(TAG, "new capability detected: $capabilityType")
 
-            if (capabilityType === CapabilityType.Heartrate) {
-                updateState(Recorder.State.CONNECTED)
-
-                val heartrate = sensorConnection.getCurrentCapability(CapabilityType.Heartrate) as Heartrate
-                heartrate.addListener(heartrateListener)
+            when (capabilityType) {
+                CapabilityType.Heartrate -> {
+                    updateState(Recorder.State.CONNECTED)
+                    val heartrate = sensorConnection.getCurrentCapability(capabilityType) as Heartrate
+                    heartrate.addListener(heartrateListener)
+                }
+                CapabilityType.Battery -> {
+                    val battery = sensorConnection.getCurrentCapability(capabilityType) as Battery
+                    battery.addListener(batteryListener)
+                }
             }
         }
 
@@ -72,6 +82,15 @@ class WahooRecorder(private val device:BluetoothDevice, private val service: Rec
 
     }
 
+    private val batteryListener = object : Battery.Listener {
+
+        override fun onBatteryData(data: Battery.Data?) {
+            this@WahooRecorder.batteryLevel = Recorder.BatteryLevel.valueOf(data?.batteryLevel?.name ?: BatteryLevel.UNKNOWN.name)
+            updateState()
+        }
+
+    }
+
     override fun connect() {
         val connectionParams = BTLEConnectionParams(device, HardwareConnectorTypes.SensorType.HEARTRATE)
         connection = connector.requestSensorConnection(connectionParams, connectionListener)
@@ -80,10 +99,6 @@ class WahooRecorder(private val device:BluetoothDevice, private val service: Rec
     override fun disconnect() {
         connection?.disconnect()
         connector.shutdown()
-    }
-
-    override fun getState(): Recorder.State {
-        return state
     }
 
     override fun start() {
@@ -105,10 +120,10 @@ class WahooRecorder(private val device:BluetoothDevice, private val service: Rec
         data = createObservable()
     }
 
-    private fun updateState(state: Recorder.State) {
+    private fun updateState(state: Recorder.State = this.state) {
         this.state = state
 
-        service.bus.events.onNext(RecorderBus.RecorderStateChanged(device, state))
+        service.bus.events.onNext(RecorderBus.RecorderStateChanged(device, state, batteryLevel))
     }
 
     private fun createObservable(): PublishSubject<Heartrate.Data> = PublishSubject.create()

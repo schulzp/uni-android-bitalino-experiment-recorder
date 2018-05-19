@@ -141,7 +141,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
     }
 
     private fun updateState(stateChanged: RecorderBus.RecorderStateChanged) {
-        val lowest = Recorder.State.lowest(recorders.values.map(Recorder::getState))
+        val lowest = Recorder.State.lowest(recorders.values.map(Recorder::state))
 
         val state = State.valueOf(lowest)
 
