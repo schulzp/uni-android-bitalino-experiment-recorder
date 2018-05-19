@@ -21,6 +21,10 @@
             </intent-filter>
         </activity>
         <service
+            android:name=".service.DiscoveryService"
+            android:enabled="true"
+            android:exported="false" />
+        <service
             android:name=".service.RecorderService"
             android:enabled="true"
             android:exported="false" />

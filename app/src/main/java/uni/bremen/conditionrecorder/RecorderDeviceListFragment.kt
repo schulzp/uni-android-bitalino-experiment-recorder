@@ -108,7 +108,7 @@ class RecorderDeviceListFragment : Fragment() {
 
         val discovery = WahooDiscovery(service)
         var disposable: Disposable? = null
-        disposable = discovery.discovery
+        disposable = discovery.devices
                 .filter { it.address == WahooRecorder.DEFAULT_ADDRESS }
                 .doFinally {
                     bluetoothAdapter.bondedDevices

@@ -18,7 +18,7 @@ open class BindableService : Service() {
 
     }
 
-    final override fun onBind(intent: Intent): IBinder = binder
+    override fun onBind(intent: Intent): IBinder = binder
 
     override fun onCreate() {
         super.onCreate()
