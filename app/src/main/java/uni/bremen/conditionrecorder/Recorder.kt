@@ -1,6 +1,9 @@
 package uni.bremen.conditionrecorder
 
-abstract class Recorder {
+import android.bluetooth.BluetoothDevice
+import uni.bremen.conditionrecorder.service.RecorderService
+
+abstract class Recorder(protected val device:BluetoothDevice, protected val service:RecorderService) {
 
     var state:State = State.DISCONNECTED
     protected set(value) { field = value }
@@ -35,5 +38,10 @@ abstract class Recorder {
     abstract fun start()
 
     abstract fun stop()
+
+    protected fun updateState(state: State = this.state) {
+        this.state = state
+        service.bus.events.onNext(RecorderBus.RecorderStateChanged(device, state, batteryLevel))
+    }
 
 }

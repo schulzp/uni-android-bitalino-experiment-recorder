@@ -19,7 +19,7 @@ import uni.bremen.conditionrecorder.service.RecorderService
 
 
 
-class WahooRecorder(private val device:BluetoothDevice, private val service: RecorderService) : Recorder() {
+class WahooRecorder(device:BluetoothDevice, service: RecorderService) : Recorder(device, service) {
 
     var data: PublishSubject<Heartrate.Data> = createObservable()
         private set(value) {
@@ -85,6 +85,7 @@ class WahooRecorder(private val device:BluetoothDevice, private val service: Rec
     private val batteryListener = object : Battery.Listener {
 
         override fun onBatteryData(data: Battery.Data?) {
+            Log.d(TAG, "battery level: ${data?.batteryLevel}")
             this@WahooRecorder.batteryLevel = Recorder.BatteryLevel.valueOf(data?.batteryLevel?.name ?: BatteryLevel.UNKNOWN.name)
             updateState()
         }
@@ -118,12 +119,6 @@ class WahooRecorder(private val device:BluetoothDevice, private val service: Rec
 
         data.onComplete()
         data = createObservable()
-    }
-
-    private fun updateState(state: Recorder.State = this.state) {
-        this.state = state
-
-        service.bus.events.onNext(RecorderBus.RecorderStateChanged(device, state, batteryLevel))
     }
 
     private fun createObservable(): PublishSubject<Heartrate.Data> = PublishSubject.create()

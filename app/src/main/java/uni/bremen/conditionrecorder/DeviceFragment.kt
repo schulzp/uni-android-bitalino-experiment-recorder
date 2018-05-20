@@ -233,7 +233,7 @@ class DeviceFragment : ContentFragment(Content.DEVICE, R.string.device), OnBITal
             nameTextView!!.text = bluetoothDevice!!.name
         }
         addressTextView!!.text = bluetoothDevice!!.address
-        stateTextView!!.setText(currentState.name)
+        stateTextView!!.text = currentState.name
 
         var communication = Communication.getById(bluetoothDevice!!.type)
         Log.d(TAG, "Communication: " + communication.name)

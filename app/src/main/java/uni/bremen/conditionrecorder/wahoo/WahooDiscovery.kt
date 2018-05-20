@@ -10,6 +10,7 @@ import com.wahoofitness.connector.conn.connections.params.ConnectionParams
 import com.wahoofitness.connector.listeners.discovery.DiscoveryListener
 import io.reactivex.Scheduler
 import uni.bremen.conditionrecorder.BluetoothDeviceDiscovery
+import uni.bremen.conditionrecorder.bitalino.BITalinoDiscovery
 
 class WahooDiscovery(context: Context) : BluetoothDeviceDiscovery() {
 
@@ -33,14 +34,22 @@ class WahooDiscovery(context: Context) : BluetoothDeviceDiscovery() {
     }
 
     override fun onStart() {
-        connector.startDiscovery(
-                HardwareConnectorTypes.SensorType.HEARTRATE,
-                HardwareConnectorTypes.NetworkType.BTLE, listener)
+        try {
+            connector.startDiscovery(
+                    HardwareConnectorTypes.SensorType.HEARTRATE,
+                    HardwareConnectorTypes.NetworkType.BTLE, listener)
+        } catch (e: Exception) {
+            onError(e)
+        }
     }
 
     override fun onComplete() {
-        connector.stopDiscovery(HardwareConnectorTypes.NetworkType.BTLE)
-        connector.shutdown()
+        try {
+            connector.stopDiscovery(HardwareConnectorTypes.NetworkType.BTLE)
+            connector.shutdown()
+        } catch (e: Exception) {
+            Log.w(TAG, "failed to stop discovery: ${e.message}")
+        }
     }
 
     companion object {

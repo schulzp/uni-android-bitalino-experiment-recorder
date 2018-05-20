@@ -26,7 +26,7 @@ class DiscoveryService : BindableService() {
     private val discoveryProviders = LinkedList<() -> BluetoothDeviceDiscovery>()
 
     init {
-        discoveryProviders.add({ BITalinoDiscovery(this) })
+        //discoveryProviders.add({ BITalinoDiscovery(this) })
         discoveryProviders.add({ WahooDiscovery(this) })
     }
 

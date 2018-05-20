@@ -9,4 +9,7 @@
 
     <dimen name="fragment_margin">4dp</dimen>
     <dimen name="phase_button_height">200dp</dimen>
+
+    <dimen name="item_padding_top">5dp</dimen>
+    <dimen name="item_padding_bottom">5dp</dimen>
 </resources>

@@ -16,7 +16,7 @@ import uni.bremen.conditionrecorder.Recorder
 import uni.bremen.conditionrecorder.RecorderBus
 import uni.bremen.conditionrecorder.service.RecorderService
 
-class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService) : Recorder() {
+class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Recorder(device, service) {
 
     var frames: PublishSubject<BITalinoFrame> = createObservable()
         private set(value) {
@@ -38,7 +38,7 @@ class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService
 
                 Log.i(TAG, identifier + " -> " + state.name)
 
-                this@BITalinoRecorder.state = when (state) {
+                updateState(when (state) {
                     Constants.States.NO_CONNECTION,
                     Constants.States.DISCONNECTED,
                     Constants.States.LISTEN,
@@ -48,16 +48,13 @@ class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService
                     Constants.States.ACQUISITION_TRYING -> Recorder.State.RECORDING_STARTED
                     Constants.States.ACQUISITION_OK -> Recorder.State.RECORDING
                     Constants.States.ACQUISITION_STOPPING -> Recorder.State.RECORDING_STOPPED
-                }
-
-                service.bus.events.onNext(RecorderBus.RecorderStateChanged(device, this@BITalinoRecorder.state))
-
+                })
             } else if (Constants.ACTION_DATA_AVAILABLE == action) {
                 if (intent.hasExtra(Constants.EXTRA_DATA)) {
                     val parcelable = intent.getParcelableExtra<Parcelable>(Constants.EXTRA_DATA)
                     if (parcelable.javaClass == BITalinoFrame::class.java) {
                         val frame = parcelable as BITalinoFrame
-                        handleFrame(frame)
+                        handle(frame)
                     }
                 }
             } else if (Constants.ACTION_COMMAND_REPLY == action) {
@@ -65,18 +62,42 @@ class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService
 
                 if (intent.hasExtra(Constants.EXTRA_COMMAND_REPLY) && intent.getParcelableExtra<Parcelable>(Constants.EXTRA_COMMAND_REPLY) != null) {
                     val parcelable = intent.getParcelableExtra<Parcelable>(Constants.EXTRA_COMMAND_REPLY)
-                    if (parcelable.javaClass == BITalinoState::class.java) {
-                        Log.d(TAG, (parcelable as BITalinoState).toString())
-                    } else if (parcelable.javaClass == BITalinoDescription::class.java) {
-                        var isBITalino2 = (parcelable as BITalinoDescription).isBITalino2
-                        Log.d(RecorderService.TAG, "isBITalino2: " + isBITalino2 + "; FwVersion: " + parcelable.fwVersion.toString())
+                    if (parcelable is BITalinoState) {
+                        handle(parcelable)
+                    } else if (parcelable is BITalinoDescription) {
+                        handle(parcelable)
                     }
                 }
             }
         }
 
-        fun handleFrame(frame: BITalinoFrame) {
-            Log.d(RecorderService.TAG, "frame: $frame")
+        private fun handle(parcelable: BITalinoDescription) {
+            var isBITalino2 = (parcelable as BITalinoDescription).isBITalino2
+            Log.d(RecorderService.TAG, "isBITalino2: " + isBITalino2 + "; FwVersion: " + parcelable.fwVersion.toString())
+
+            if (state == State.CONNECTED) {
+                try {
+                    bitalino?.state()
+                } catch (e: Exception) {
+                    Log.w(TAG, "failed to read state")
+                }
+            }
+        }
+
+        private fun handle(frame: BITalinoFrame) {
+            Log.d(RecorderService.TAG, "frame available: $frame")
+        }
+
+        private fun handle(state: BITalinoState) {
+            if (state.battery < state.batThreshold) {
+                batteryLevel = BatteryLevel.CRITICAL
+            } else if (state.battery < 600) {
+                batteryLevel = BatteryLevel.LOW
+            } else {
+                batteryLevel = BatteryLevel.GOOD
+            }
+
+            updateState()
         }
     }
 
@@ -101,7 +122,7 @@ class BITalinoRecorder(val device: BluetoothDevice, val service: RecorderService
         Log.d(TAG, "started")
         service.bus.events.onNext(RecorderBus.BitalinoRecordingStarted())
 
-        bitalino?.start(intArrayOf(0, 1, 2, 3, 4, 5), 1000)
+        bitalino?.start(intArrayOf(0, 1, 2, 3, 4, 5), 100)
     }
 
     override fun stop() {

@@ -111,6 +111,7 @@ class RecorderDeviceListFragment : Fragment() {
 
     private fun setupList() {
         adapter = DeviceListAdapter(activity!!)
+        adapter.compact = true
         RecycleViewHelper.verticalList(list, activity!!).adapter = adapter
     }
 

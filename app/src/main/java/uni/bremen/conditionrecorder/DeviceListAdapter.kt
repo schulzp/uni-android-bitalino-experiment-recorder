@@ -6,6 +6,9 @@ import android.graphics.PorterDuff
 import android.view.View
 import android.widget.TextView
 import androidx.recyclerview.selection.StorageStrategy
+import com.mikepenz.fontawesome_typeface_library.FontAwesome
+import com.mikepenz.iconics.IconicsDrawable
+import com.mikepenz.iconics.view.IconicsImageView
 import info.plux.pluxapi.Constants
 import java.util.*
 
@@ -15,6 +18,8 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
     init {
         setHasStableIds(true)
     }
+
+    var compact:Boolean = false
 
     override val itemKeyProvider = DeviceKeyProvider()
 
@@ -46,12 +51,15 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
     }
 
     override fun createViewHolder(view:View):DeviceViewHolder {
-        view.setPadding(0, 0, 0, 0)
+        if (compact) {
+            view.setPadding(0, 0, 0, 0)
+        }
 
         return DeviceViewHolder(view,
                 view.findViewById(android.R.id.text1) as TextView,
                 view.findViewById(android.R.id.text2) as TextView,
-                view.findViewById(R.id.text3) as TextView)
+                view.findViewById(R.id.stateText) as TextView,
+                view.findViewById(R.id.stateIcon) as IconicsImageView)
     }
 
     override fun getItemViewType(position: Int): Int = items[position].type
@@ -68,7 +76,15 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
 
     }
 
-    class DeviceViewHolder(view:View, val name: TextView, val address: TextView, val state: TextView) : GenericRecycleViewAdapter.GenericViewHolder<String>(view, GenericRecycleViewAdapter.GenericItemDetails("", -1))
+    class DeviceViewHolder(view:View,
+                           val name: TextView,
+                           val address: TextView,
+                           val state: TextView,
+                           val stateIcon:IconicsImageView) : GenericRecycleViewAdapter.GenericViewHolder<String>(view, GenericRecycleViewAdapter.GenericItemDetails("", -1)) {
+        init {
+            stateIcon.icon = IconicsDrawable(view.context).sizeDp(24)
+        }
+    }
 
     interface StatefulBluetoothDevice {
         val device: BluetoothDevice
@@ -106,7 +122,7 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
                     else -> R.color.accent
                 })
 
-                state.compoundDrawables[0]?.setColorFilter(connectionColor, PorterDuff.Mode.MULTIPLY)
+                state.compoundDrawables[1]?.setColorFilter(connectionColor, PorterDuff.Mode.MULTIPLY)
                 state.text = this@RecorderBluetoothDevice.state?.name
 
                 val batteryColor = context.getColor(when(this@RecorderBluetoothDevice.batteryLevel) {
@@ -116,7 +132,14 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
                     Recorder.BatteryLevel.GOOD -> R.color.batteryGood
                 })
 
-                name.compoundDrawables[2]?.setColorFilter(batteryColor, PorterDuff.Mode.MULTIPLY)
+                val batteryIcon = when(this@RecorderBluetoothDevice.batteryLevel) {
+                    Recorder.BatteryLevel.UNKNOWN -> FontAwesome.Icon.faw_ellipsis_h
+                    Recorder.BatteryLevel.CRITICAL -> FontAwesome.Icon.faw_battery_empty
+                    Recorder.BatteryLevel.LOW -> FontAwesome.Icon.faw_battery_quarter
+                    Recorder.BatteryLevel.GOOD -> FontAwesome.Icon.faw_battery_full
+                }
+
+                stateIcon.icon.icon(batteryIcon).color(batteryColor)
             }
         }
     }

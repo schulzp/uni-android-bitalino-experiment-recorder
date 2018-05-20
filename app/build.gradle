@@ -40,6 +40,10 @@ dependencies {
 
     implementation group: 'com.google.guava', name: 'guava', version: '25.0-android'
 
+    implementation 'com.mikepenz:iconics-core:3.0.3@aar'
+    implementation 'com.mikepenz:iconics-views:3.0.3@aar'
+    implementation 'com.mikepenz:fontawesome-typeface:5.0.6.0@aar'
+
     testImplementation 'junit:junit:4.12'
 
     androidTestImplementation 'com.android.support.test:runner:1.0.2'

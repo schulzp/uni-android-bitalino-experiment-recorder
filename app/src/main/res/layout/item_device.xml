@@ -14,8 +14,6 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
 
-        android:drawableRight="@drawable/connected_indicator"
-
         app:layout_goneMarginRight="0dp"
 
         app:layout_constraintVertical_weight="0.5"
@@ -50,22 +48,34 @@
         android:id="@+id/horizontalBarrier"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:constraint_referenced_ids="text3"
+        app:constraint_referenced_ids="stateText,stateIcon"
         app:barrierDirection="start" />
 
     <TextView android:text="CONNECTED"
         style="@style/AppTheme.Item.Device.Status"
 
-        android:id="@+id/text3"
+        android:id="@+id/stateText"
 
         android:layout_width="0dp"
         android:layout_height="0dp"
 
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/stateIcon"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_weight="0.4"
         app:layout_constraintStart_toEndOf="@id/horizontalBarrier"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintWidth_min="40dp" />
+
+    <com.mikepenz.iconics.view.IconicsImageView
+        android:id="@+id/stateIcon"
+
+        android:layout_width="0dp"
+        android:layout_height="10dip"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_weight="0.4"
+        app:layout_constraintStart_toEndOf="@id/horizontalBarrier"
+        app:layout_constraintTop_toBottomOf="@id/stateText" />
 
 </android.support.constraint.ConstraintLayout>

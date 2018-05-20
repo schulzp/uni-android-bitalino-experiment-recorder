@@ -34,9 +34,13 @@ class BITalinoDiscovery(private val context: Context) : BluetoothDeviceDiscovery
     }
 
     override fun onStart() {
-        context.registerReceiver(scanDevicesUpdateReceiver, IntentFilter(Constants.ACTION_MESSAGE_SCAN))
+        try {
+            context.registerReceiver(scanDevicesUpdateReceiver, IntentFilter(Constants.ACTION_MESSAGE_SCAN))
 
-        bthDeviceScan.doDiscovery()
+            bthDeviceScan.doDiscovery()
+        } catch (e: Exception) {
+            onError(e)
+        }
     }
 
     override fun onComplete() {
