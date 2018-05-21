@@ -1,10 +1,10 @@
-package uni.bremen.conditionrecorder.bitalino
+package uni.bremen.conditionrecorder.io
 
 import com.google.common.util.concurrent.AtomicDouble
 import info.plux.pluxapi.bitalino.BITalinoFrame
 import java.util.concurrent.atomic.AtomicInteger
 
-class BITalinoFrameMapper {
+class DataAggregator {
 
     var phase = AtomicInteger(DEFAULT_PHASE)
 
@@ -19,11 +19,6 @@ class BITalinoFrameMapper {
             frame.analogArray[5],
             value.getAndSet(DEFAULT_VALUE),
             phase.get())
-
-    fun reset() {
-        phase.set(DEFAULT_PHASE)
-        value.set(DEFAULT_VALUE)
-    }
 
     companion object {
 

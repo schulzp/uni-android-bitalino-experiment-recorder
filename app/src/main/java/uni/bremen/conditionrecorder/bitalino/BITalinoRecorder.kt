@@ -23,6 +23,17 @@ class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Reco
             field = value
         }
 
+
+    /**
+     * BITalino analog channels A1-6 (indexed 0-5).
+     */
+    private val analogChannels = intArrayOf(0, 1, 2, 3, 4)
+
+    /**
+     * BITalino sample rate in Hz.
+     */
+    private val sampleRate = 100
+
     private var bitalino: BITalinoCommunication? = null
 
     private val dataReceiver = OnBITalinoDataAvailable { frame -> frames.onNext(frame) }
@@ -75,13 +86,7 @@ class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Reco
             var isBITalino2 = parcelable.isBITalino2
             Log.d(RecorderService.TAG, "isBITalino2: " + isBITalino2 + "; FwVersion: " + parcelable.fwVersion.toString())
 
-            if (state == State.CONNECTED) {
-                try {
-                    bitalino?.state()
-                } catch (e: Exception) {
-                    Log.w(TAG, "failed to read state")
-                }
-            }
+            requestState()
         }
 
         private fun handle(frame: BITalinoFrame) {
@@ -91,7 +96,7 @@ class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Reco
         private fun handle(state: BITalinoState) {
             val voltageLevel = BITalinoUtils.calculateBatteryVoltLevel(state)
             val voltagePercentage = BITalinoUtils.calculateBatteryPercentage(voltageLevel)
-            val ordinal = Math.round(voltageLevel * BatteryLevel.GOOD.ordinal) as Int
+            val ordinal = Math.round(voltagePercentage * BatteryLevel.GOOD.ordinal).toInt()
 
             batteryLevel = BatteryLevel.values()[ordinal]
 
@@ -120,7 +125,7 @@ class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Reco
         Log.d(TAG, "started")
         service.bus.events.onNext(RecorderBus.BitalinoRecordingStarted())
 
-        bitalino?.start(intArrayOf(0, 1, 2, 3, 4, 5), 100)
+        bitalino?.start(analogChannels, sampleRate)
     }
 
     override fun stop() {
@@ -134,6 +139,8 @@ class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Reco
             bitalino?.stop()
         } catch (e: BITalinoException) {
             Log.w(TAG, "failed to stop communication: ${e.message}")
+        } finally {
+            requestState()
         }
     }
 
@@ -166,6 +173,15 @@ class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Reco
         return intentFilter
     }
 
+    private fun requestState() {
+        if (state == State.CONNECTED) {
+            try {
+                bitalino?.state()
+            } catch (e: Exception) {
+                Log.w(TAG, "failed to request state")
+            }
+        }
+    }
 
     private fun createObservable(): PublishSubject<BITalinoFrame> = PublishSubject.create()
 

@@ -6,7 +6,7 @@ import android.util.Log
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
-import uni.bremen.conditionrecorder.bitalino.BITalinoFrameMapper
+import uni.bremen.conditionrecorder.io.DataAggregator
 import uni.bremen.conditionrecorder.bitalino.BITalinoRecorder
 import uni.bremen.conditionrecorder.io.DataWriter
 import uni.bremen.conditionrecorder.service.RecorderService
@@ -21,7 +21,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
 
         companion object {
 
-            fun valueOf(state: Recorder.State):State {
+            fun map(state: Recorder.State):State {
                 return when(state) {
                     Recorder.State.CONNECTED -> State.READY
                     Recorder.State.RECORDING -> State.RECORDING
@@ -33,7 +33,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
 
     private val disposables = CompositeDisposable()
 
-    private val aggregator = BITalinoFrameMapper()
+    private var aggregator = DataAggregator()
 
     val recorders = HashMap<BluetoothDevice, Recorder>()
 
@@ -68,7 +68,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
 
         Log.d(TAG, "started recording")
 
-        aggregator.reset()
+        aggregator = DataAggregator()
 
         recorders.values.forEach(this::startRecorder)
     }
@@ -141,11 +141,11 @@ class RecorderSession(private val service: RecorderService, private val schedule
     }
 
     private fun updateState(stateChanged: RecorderBus.RecorderStateChanged) {
-        val lowest = Recorder.State.lowest(recorders.values.map(Recorder::state))
+        val worstRecorderState = Recorder.State.lowest(recorders.values.map(Recorder::state))
 
-        val state = State.valueOf(lowest)
+        val sessionState = State.map(worstRecorderState)
 
-        service.bus.events.onNext(RecorderBus.RecorderSessionStateChanged(state))
+        service.bus.events.onNext(RecorderBus.RecorderSessionStateChanged(sessionState))
     }
 
     companion object {

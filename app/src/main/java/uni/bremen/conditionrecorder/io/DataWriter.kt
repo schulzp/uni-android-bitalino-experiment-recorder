@@ -11,7 +11,7 @@ class DataWriter(file: File) : AutoCloseable {
 
     private val printer = CSVPrinter(
             OutputStreamWriter(FileOutputStream(file)),
-            CSVFormat.DEFAULT.withHeader("CH0", "CH1", "CH2", "CH3", "CH4", "CH5", "HR", "PHASE"))
+            CSVFormat.DEFAULT.withHeader("T", "CH0", "CH1", "CH2", "CH3", "CH4", "CH5", "HR", "PHASE"))
 
     override fun close() {
         printer.flush()
@@ -19,7 +19,7 @@ class DataWriter(file: File) : AutoCloseable {
     }
 
     fun write(data:Array<*>) {
-        printer.printRecord(*data)
+        printer.printRecord(System.currentTimeMillis(), *data)
     }
 
 }
