@@ -72,7 +72,7 @@ class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Reco
         }
 
         private fun handle(parcelable: BITalinoDescription) {
-            var isBITalino2 = (parcelable as BITalinoDescription).isBITalino2
+            var isBITalino2 = parcelable.isBITalino2
             Log.d(RecorderService.TAG, "isBITalino2: " + isBITalino2 + "; FwVersion: " + parcelable.fwVersion.toString())
 
             if (state == State.CONNECTED) {
@@ -89,13 +89,11 @@ class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Reco
         }
 
         private fun handle(state: BITalinoState) {
-            if (state.battery < state.batThreshold) {
-                batteryLevel = BatteryLevel.CRITICAL
-            } else if (state.battery < 600) {
-                batteryLevel = BatteryLevel.LOW
-            } else {
-                batteryLevel = BatteryLevel.GOOD
-            }
+            val voltageLevel = BITalinoUtils.calculateBatteryVoltLevel(state)
+            val voltagePercentage = BITalinoUtils.calculateBatteryPercentage(voltageLevel)
+            val ordinal = Math.round(voltageLevel * BatteryLevel.GOOD.ordinal) as Int
+
+            batteryLevel = BatteryLevel.values()[ordinal]
 
             updateState()
         }
