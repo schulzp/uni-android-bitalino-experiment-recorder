@@ -35,7 +35,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
 
     private var aggregator = DataAggregator()
 
-    val recorders = HashMap<BluetoothDevice, Recorder>()
+    private val recorders = HashMap<BluetoothDevice, Recorder>()
 
     fun create() {
         disposables.add(service.bus.commands.observeOn(scheduler).subscribeOn(scheduler)
@@ -48,7 +48,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
         disposables.add(service.bus.events.observeOn(scheduler).subscribeOn(scheduler)
                 .subscribe {
                     when (it) {
-                        is RecorderBus.RecorderStateChanged -> updateState(it)
+                        is RecorderBus.RecorderStateChanged -> updateState()
                         is RecorderBus.SelectedDevice -> createRecorder(it.device)
                         is RecorderBus.PhaseSelected -> aggregator.phase.set(it.phase)
                     }
@@ -140,7 +140,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
         return File(externalFilesDir, "data-$time.csv")
     }
 
-    private fun updateState(stateChanged: RecorderBus.RecorderStateChanged) {
+    private fun updateState() {
         val worstRecorderState = Recorder.State.lowest(recorders.values.map(Recorder::state))
 
         val sessionState = State.map(worstRecorderState)

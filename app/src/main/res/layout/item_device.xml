@@ -48,8 +48,24 @@
         android:id="@+id/horizontalBarrier"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:constraint_referenced_ids="stateText,stateIcon"
+        app:constraint_referenced_ids="stateIcon, stateText, batteryIcon"
         app:barrierDirection="start" />
+
+    <com.mikepenz.iconics.view.IconicsImageView
+        android:id="@+id/stateIcon"
+
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+
+        app:layout_constraintHeight_min="10dip"
+
+        app:layout_constraintVertical_weight="0.4"
+
+        app:layout_constraintBottom_toTopOf="@id/stateText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_chainStyle="spread_inside"
+        app:layout_constraintStart_toEndOf="@id/horizontalBarrier"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView android:text="CONNECTED"
         style="@style/AppTheme.Item.Device.Status"
@@ -59,22 +75,28 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
 
-        app:layout_constraintBottom_toTopOf="@id/stateIcon"
+        app:layout_constraintHeight_min="10dip"
+
+        app:layout_constraintVertical_weight="0.2"
+
+        app:layout_constraintBottom_toTopOf="@id/batteryIcon"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_weight="0.4"
         app:layout_constraintStart_toEndOf="@id/horizontalBarrier"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/stateIcon"
         app:layout_constraintWidth_min="40dp" />
 
     <com.mikepenz.iconics.view.IconicsImageView
-        android:id="@+id/stateIcon"
+        android:id="@+id/batteryIcon"
 
         android:layout_width="0dp"
-        android:layout_height="10dip"
+        android:layout_height="0dp"
+
+        app:layout_constraintHeight_min="5dip"
+
+        app:layout_constraintVertical_weight="0.2"
 
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_weight="0.4"
         app:layout_constraintStart_toEndOf="@id/horizontalBarrier"
         app:layout_constraintTop_toBottomOf="@id/stateText" />
 

@@ -12,11 +12,12 @@
     <color name="deviceStatusDisconnected">#a0a0a0</color>
     <color name="deviceStatusConnecting">@color/primaryLight</color>
     <color name="deviceStatusConnected">@color/primary</color>
+    <color name="deviceStatusError">#c40a00</color>
     <color name="deviceStatus">#555555</color>
     <color name="separator">#cccccc</color>
 
     <color name="batteryUnkown">@color/deviceStatusDisconnected</color>
-    <color name="batteryCritical">#ff0000</color>
+    <color name="batteryCritical">@color/deviceStatusError</color>
     <color name="batteryLow">@color/accent</color>
     <color name="batteryGood">@color/primary</color>
 </resources>

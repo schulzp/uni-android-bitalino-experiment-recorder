@@ -16,10 +16,10 @@
         <!-- Tints the input fields like checkboxes and text fields -->
         <item name="colorAccent">@color/primaryInverse</item>
 
-        <!-- Applies to views in their normal state. -->
+        <!-- Applies to views in their normal stateText. -->
         <item name="colorControlNormal">@color/primaryLight</item>
 
-        <!-- Applies to views in their activated state (i.e checked or switches) -->
+        <!-- Applies to views in their activated stateText (i.e checked or switches) -->
         <item name="colorControlActivated">@color/accent</item>
         <!-- Applied to framework control highlights (i.e ripples or list selectors) -->
         <item name="colorControlHighlight">@color/accentLight</item>
@@ -67,8 +67,6 @@
     <style name="AppTheme.Item.Device.Status">
         <item name="android:textAppearance">@style/TextAppearance.Item.Device.Status</item>
         <item name="android:gravity">center_vertical|center_horizontal</item>
-        <item name="android:drawableTop">@drawable/connected_indicator</item>
-        <item name="android:drawablePadding">2dp</item>
     </style>
 
     <style name="AppTheme.Item.Recording">

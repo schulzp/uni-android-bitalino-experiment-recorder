@@ -2,14 +2,13 @@ package uni.bremen.conditionrecorder
 
 import android.bluetooth.BluetoothDevice
 import android.content.Context
-import android.graphics.PorterDuff
 import android.view.View
+import android.view.animation.AnimationUtils
 import android.widget.TextView
 import androidx.recyclerview.selection.StorageStrategy
 import com.mikepenz.fontawesome_typeface_library.FontAwesome
 import com.mikepenz.iconics.IconicsDrawable
 import com.mikepenz.iconics.view.IconicsImageView
-import info.plux.pluxapi.Constants
 import java.util.*
 
 
@@ -59,7 +58,8 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
                 view.findViewById(android.R.id.text1) as TextView,
                 view.findViewById(android.R.id.text2) as TextView,
                 view.findViewById(R.id.stateText) as TextView,
-                view.findViewById(R.id.stateIcon) as IconicsImageView)
+                view.findViewById(R.id.stateIcon) as IconicsImageView,
+                view.findViewById(R.id.batteryIcon) as IconicsImageView)
     }
 
     override fun getItemViewType(position: Int): Int = items[position].type
@@ -79,10 +79,23 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
     class DeviceViewHolder(view:View,
                            val name: TextView,
                            val address: TextView,
-                           val state: TextView,
-                           val stateIcon:IconicsImageView) : GenericRecycleViewAdapter.GenericViewHolder<String>(view, GenericRecycleViewAdapter.GenericItemDetails("", -1)) {
+                           val stateText: TextView,
+                           val stateIcon: IconicsImageView,
+                           val batteryIcon: IconicsImageView) : GenericRecycleViewAdapter.GenericViewHolder<String>(view, GenericRecycleViewAdapter.GenericItemDetails("", -1)) {
+
+        private val stateIconAnimation = AnimationUtils.loadAnimation(view.context, R.anim.blink)
+
+        fun startStateIconAnimation() {
+            stateIcon.startAnimation(stateIconAnimation)
+        }
+
+        fun stopStateIconAnimation() {
+            stateIcon.clearAnimation()
+        }
+
         init {
             stateIcon.icon = IconicsDrawable(view.context).sizeDp(24)
+            batteryIcon.icon = IconicsDrawable(view.context).sizeDp(24)
         }
     }
 
@@ -115,31 +128,51 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
         }
 
         override fun update(deviceViewHolder: DeviceViewHolder, context: Context) {
+            val deviceState = this.state
+            val batteryLevel = this.batteryLevel
+
             with(deviceViewHolder) {
-                val connectionColor = context.getColor(when(this@RecorderBluetoothDevice.state) {
+                val connectionColor = context.getColor(when(deviceState) {
+                    Recorder.State.RECORDING,
                     Recorder.State.CONNECTED -> R.color.deviceStatusConnected
-                    Constants.States.DISCONNECTED -> R.color.deviceStatusDisconnected
+                    Recorder.State.CONNECTING -> R.color.deviceStatusConnecting
+                    Recorder.State.DISCONNECTED -> R.color.deviceStatusDisconnected
                     else -> R.color.accent
                 })
 
-                state.compoundDrawables[1]?.setColorFilter(connectionColor, PorterDuff.Mode.MULTIPLY)
-                state.text = this@RecorderBluetoothDevice.state?.name
+                val connectionIcon = when(deviceState) {
+                    Recorder.State.RECORDING -> FontAwesome.Icon.faw_dot_circle
+                    Recorder.State.CONNECTED,
+                    Recorder.State.CONNECTING,
+                    Recorder.State.DISCONNECTED -> FontAwesome.Icon.faw_circle
+                    else -> FontAwesome.Icon.faw_exclamation_circle
+                }
 
-                val batteryColor = context.getColor(when(this@RecorderBluetoothDevice.batteryLevel) {
+                this.stateIcon.icon.icon(connectionIcon).color(connectionColor)
+
+                this.stateText.text = deviceState.name
+
+                val batteryColor = context.getColor(when(batteryLevel) {
                     Recorder.BatteryLevel.UNKNOWN -> R.color.batteryUnkown
                     Recorder.BatteryLevel.CRITICAL -> R.color.batteryCritical
                     Recorder.BatteryLevel.LOW -> R.color.batteryLow
                     Recorder.BatteryLevel.GOOD -> R.color.batteryGood
                 })
 
-                val batteryIcon = when(this@RecorderBluetoothDevice.batteryLevel) {
+                val batteryIcon = when(batteryLevel) {
                     Recorder.BatteryLevel.UNKNOWN -> FontAwesome.Icon.faw_ellipsis_h
                     Recorder.BatteryLevel.CRITICAL -> FontAwesome.Icon.faw_battery_empty
                     Recorder.BatteryLevel.LOW -> FontAwesome.Icon.faw_battery_quarter
                     Recorder.BatteryLevel.GOOD -> FontAwesome.Icon.faw_battery_full
                 }
 
-                stateIcon.icon.icon(batteryIcon).color(batteryColor)
+                if (deviceState == Recorder.State.RECORDING) {
+                    startStateIconAnimation()
+                } else {
+                    stopStateIconAnimation()
+                }
+
+                this.batteryIcon.icon.icon(batteryIcon).color(batteryColor)
             }
         }
     }
