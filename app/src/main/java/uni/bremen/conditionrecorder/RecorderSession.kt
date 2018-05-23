@@ -6,8 +6,8 @@ import android.util.Log
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
-import uni.bremen.conditionrecorder.io.DataAggregator
 import uni.bremen.conditionrecorder.bitalino.BITalinoRecorder
+import uni.bremen.conditionrecorder.io.DataAggregator
 import uni.bremen.conditionrecorder.io.DataWriter
 import uni.bremen.conditionrecorder.service.RecorderService
 import uni.bremen.conditionrecorder.wahoo.WahooRecorder
@@ -31,21 +31,21 @@ class RecorderSession(private val service: RecorderService, private val schedule
         }
     }
 
-    private val disposables = CompositeDisposable()
+    private val sessionDisposables = CompositeDisposable()
 
     private var aggregator = DataAggregator()
 
     private val recorders = HashMap<BluetoothDevice, Recorder>()
 
     fun create() {
-        disposables.add(service.bus.commands.observeOn(scheduler).subscribeOn(scheduler)
+        sessionDisposables.add(service.bus.commands.observeOn(scheduler).subscribeOn(scheduler)
                 .subscribe {
                     when (it) {
                         is RecorderBus.StartRecording -> startRecording()
                         is RecorderBus.StopRecording -> stopRecording()
                     }
                 })
-        disposables.add(service.bus.events.observeOn(scheduler).subscribeOn(scheduler)
+        sessionDisposables.add(service.bus.events.observeOn(scheduler).subscribeOn(scheduler)
                 .subscribe {
                     when (it) {
                         is RecorderBus.RecorderStateChanged -> updateState()
@@ -59,7 +59,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
     fun destroy() {
         stopRecording()
         recorders.values.forEach(Recorder::disconnect)
-        disposables.dispose()
+        sessionDisposables.dispose()
         Log.d(TAG, "destroyed")
     }
 
@@ -126,7 +126,7 @@ class RecorderSession(private val service: RecorderService, private val schedule
 
     private fun buildRecorder(device: BluetoothDevice): Recorder {
         if (device.address.endsWith("37")) {
-            return BITalinoRecorder(device, service)
+            return BITalinoRecorder(device, service, scheduler)
         }
         if (device.address.endsWith("58")) {
             return WahooRecorder(device, service)

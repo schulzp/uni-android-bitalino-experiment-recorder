@@ -11,18 +11,20 @@ import info.plux.pluxapi.Communication
 import info.plux.pluxapi.Constants
 import info.plux.pluxapi.bitalino.*
 import info.plux.pluxapi.bitalino.bth.OnBITalinoDataAvailable
+import io.reactivex.Scheduler
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 import uni.bremen.conditionrecorder.Recorder
 import uni.bremen.conditionrecorder.RecorderBus
 import uni.bremen.conditionrecorder.service.RecorderService
 
-class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Recorder(device, service) {
+class BITalinoRecorder(device: BluetoothDevice, service: RecorderService, private val scheduler: Scheduler) : Recorder(device, service) {
 
     var frames: PublishSubject<BITalinoFrame> = createObservable()
         private set(value) {
             field = value
         }
-
 
     /**
      * BITalino analog channels A1-6 (indexed 0-5).
@@ -33,6 +35,8 @@ class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Reco
      * BITalino sample rate in Hz.
      */
     private val sampleRate = 100
+
+    private var recordingDisposable: Disposable? = null
 
     private var bitalino: BITalinoCommunication? = null
 
@@ -125,6 +129,20 @@ class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Reco
         Log.d(TAG, "started")
         service.bus.events.onNext(RecorderBus.BitalinoRecordingStarted())
 
+        val disposable = CompositeDisposable()
+
+        val check = BITalinoFrameSanityCheck()
+        disposable.add(check.observe(frames)
+                .observeOn(scheduler)
+                .subscribeOn(scheduler)
+                .subscribe { message ->
+                    this@BITalinoRecorder.message = message
+                    this@BITalinoRecorder.state = Recorder.State.ERROR
+                    this@BITalinoRecorder.updateState()
+                })
+
+        recordingDisposable = disposable
+
         bitalino?.start(analogChannels, sampleRate)
     }
 
@@ -134,6 +152,8 @@ class BITalinoRecorder(device: BluetoothDevice, service: RecorderService) : Reco
 
         frames.onComplete()
         frames = createObservable()
+
+        recordingDisposable?.dispose()
 
         try {
             bitalino?.stop()

@@ -62,7 +62,7 @@ class RecorderBus {
 
     class PhaseSelected(val phase:Int) : Event
 
-    class RecorderStateChanged(val device: BluetoothDevice, val state: Recorder.State, val batteryLevel: Recorder.BatteryLevel = Recorder.BatteryLevel.UNKNOWN) : Event
+    class RecorderStateChanged(val device: BluetoothDevice, val state: Recorder.State, val batteryLevel: Recorder.BatteryLevel = Recorder.BatteryLevel.UNKNOWN, val message: String) : Event
 
     class RecorderSessionStateChanged(val state:RecorderSession.State) : Event
 

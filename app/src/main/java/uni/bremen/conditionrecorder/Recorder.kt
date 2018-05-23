@@ -5,15 +5,18 @@ import uni.bremen.conditionrecorder.service.RecorderService
 
 abstract class Recorder(protected val device:BluetoothDevice, protected val service:RecorderService) {
 
+    var message:String = ""
+        protected set(value) { field = value }
+
     var state:State = State.DISCONNECTED
-    protected set(value) { field = value }
+        protected set(value) { field = value }
 
     var batteryLevel = Recorder.BatteryLevel.UNKNOWN
-    protected set(value) { field = value }
+        protected set(value) { field = value }
 
     enum class State {
 
-        DISCONNECTED, CONNECTING, CONNECTED, RECORDING_STARTED, RECORDING, RECORDING_STOPPED;
+        ERROR, DISCONNECTED, CONNECTING, CONNECTED, RECORDING_STARTED, RECORDING, RECORDING_STOPPED;
 
         companion object {
 
@@ -41,7 +44,7 @@ abstract class Recorder(protected val device:BluetoothDevice, protected val serv
 
     protected fun updateState(state: State = this.state) {
         this.state = state
-        service.bus.events.onNext(RecorderBus.RecorderStateChanged(device, state, batteryLevel))
+        service.bus.events.onNext(RecorderBus.RecorderStateChanged(device, state, batteryLevel, message))
     }
 
 }
