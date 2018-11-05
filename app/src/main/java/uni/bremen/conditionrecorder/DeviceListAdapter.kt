@@ -142,6 +142,8 @@ class DeviceListAdapter(context:Context, devices:MutableList<StatefulBluetoothDe
 
                 val connectionIcon = when(deviceState) {
                     Recorder.State.RECORDING -> FontAwesome.Icon.faw_dot_circle
+                    Recorder.State.CONNECTING -> FontAwesome.Icon.faw_circle2
+                    Recorder.State.CONNECTED -> FontAwesome.Icon.faw_check_circle2
                     Recorder.State.ERROR -> FontAwesome.Icon.faw_exclamation_circle
                     else -> FontAwesome.Icon.faw_circle
                 }

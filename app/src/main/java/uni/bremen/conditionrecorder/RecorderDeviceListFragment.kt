@@ -38,11 +38,17 @@ class RecorderDeviceListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        empty.setOnClickListener {
+            recorderServiceConnection.service.subscribe(this::scan)
+        }
+
         setupList()
     }
 
     override fun onResume() {
         super.onResume()
+
+        discoveryServiceConnection = DiscoveryService.bind(activity!!)
 
         recorderServiceConnection = RecorderService.bind(activity!!)
         recorderServiceConnection.service.subscribe { recorderService ->
@@ -54,13 +60,7 @@ class RecorderDeviceListFragment : Fragment() {
                     .compose(onMainThread())
                     .subscribe { change -> updateDevice(change.device, change.state, change.batteryLevel) }
 
-            discoveryServiceConnection = DiscoveryService.bind(activity!!)
-            discoveryServiceConnection.service.subscribe { discoveryService ->
-                discoveryService.start()
-                        .compose(onMainThread())
-                        .map { RecorderBus.SelectedDevice(it) }
-                        .subscribe(recorderService.bus.events::onNext)
-            }
+            scan(recorderService)
         }
 
         empty.setOnClickListener {
@@ -113,6 +113,15 @@ class RecorderDeviceListFragment : Fragment() {
         adapter = DeviceListAdapter(activity!!)
         adapter.compact = true
         RecycleViewHelper.verticalList(list, activity!!).adapter = adapter
+    }
+
+    private fun scan(recorderService: RecorderService) {
+        discoveryServiceConnection.service.subscribe { discoveryService ->
+            discoveryService.start()
+                    .compose(onMainThread())
+                    .map { RecorderBus.SelectedDevice(it) }
+                    .subscribe(recorderService.bus.events::onNext)
+        }
     }
 
 }
