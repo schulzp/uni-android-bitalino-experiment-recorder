@@ -6,14 +6,18 @@ import java.util.concurrent.TimeUnit
 
 class BITalinoFrameSanityCheck {
 
-    val maxZeroFrames = 10
+    private val maxNumberOfZeroFrames = 10
 
     fun observe(frames:Observable<BITalinoFrame>): Observable<String> {
+        return observerZeroFrames(frames)
+    }
+
+    private fun observerZeroFrames(frames: Observable<BITalinoFrame>): Observable<String> {
         return frames.map { frame -> frame.analogArray.sum() }
                 .filter { sum -> sum == 0 }
                 .buffer(1, TimeUnit.SECONDS)
                 .map { buffer -> buffer.size }
-                .filter { bufferSize -> bufferSize < maxZeroFrames }
+                .filter { numberOfZeroFrames -> numberOfZeroFrames > maxNumberOfZeroFrames }
                 .map { bufferSize -> "found $bufferSize 0 frames" }
     }
 
